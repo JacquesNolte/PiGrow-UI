@@ -188,6 +188,43 @@ describe('PhaseNutrientList', () => {
     expect(w.text()).toMatch(/save the grow first/i)
   })
 
+  it('hides the Add button, row actions, and dialog in readonly mode', async () => {
+    phaseNutrients = [
+      {
+        createdAt: '2026-07-21T00:00:00.000Z',
+        doseMlPerL: 2.5,
+        growPhaseId: 'p1',
+        id: 'pn1',
+        nutrientId: 'nut1',
+        sortOrder: 1,
+        updatedAt: '2026-07-21T00:00:00.000Z',
+      },
+    ]
+    const w = mount(PhaseNutrientList, {
+      global: { stubs: primeVueStubs },
+      props: { growPhaseId: 'p1', readonly: true },
+    })
+    await flush()
+
+    expect(w.find('[data-testid="pn-add"]').exists()).toBe(false)
+    expect(w.find('[data-testid="pn-edit-pn1"]').exists()).toBe(false)
+    expect(w.find('[data-testid="pn-delete-pn1"]').exists()).toBe(false)
+    expect(w.find('[data-testid="pn-save"]').exists()).toBe(false)
+    expect(w.text()).toContain('FloraGro')
+    expect(w.text()).toContain('2.5')
+  })
+
+  it('shows the generic empty state (no Add prompt) in readonly mode', async () => {
+    const w = mount(PhaseNutrientList, {
+      global: { stubs: primeVueStubs },
+      props: { growPhaseId: 'p1', readonly: true },
+    })
+    await flush()
+
+    expect(w.text()).toMatch(/no nutrients configured/i)
+    expect(w.text()).not.toMatch(/click.*add/i)
+  })
+
   it('shows the empty state when no rows exist for the phase', async () => {
     const w = mount(PhaseNutrientList, {
       global: { stubs: primeVueStubs },

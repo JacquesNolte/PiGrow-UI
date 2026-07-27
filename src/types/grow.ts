@@ -352,6 +352,36 @@ export interface UpdatePhaseNutrientPayload {
   sortOrder?: number
 }
 
+export type DosingWarningCode = 'NO_NUTRIENTS_CONFIGURED' | 'NO_PH_BANDS' | 'RESERVOIR_TOO_SMALL'
+
+export interface DosingLogLine {
+  id: string
+  dosingLogId: string
+  nutrientId: string
+  doseMlPerL: number
+  computedMl: number
+}
+
+export interface DosingLog {
+  id: string
+  growPhaseId: string
+  waterVolumeLiters: number
+  totalMl: number
+  warnings: DosingWarningCode[]
+  measuredPh: number | null
+  measuredEc: number | null
+  notes: string | null
+  createdAt: string
+  lines: DosingLogLine[]
+}
+
+export interface CreateDosingLogPayload {
+  waterVolumeLiters: number
+  measuredPh?: number | null
+  measuredEc?: number | null
+  notes?: string | null
+}
+
 export interface UICommand {
   deviceId: string
   action: 'ON' | 'OFF'

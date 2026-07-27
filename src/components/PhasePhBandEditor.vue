@@ -169,8 +169,21 @@ onBeforeUnmount(() => {
 
 .ph-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
+}
+
+.ph-row .field {
+  min-width: 0;
+}
+
+.ph-row :deep(.p-inputnumber) {
+  width: 100%;
+}
+
+.ph-row :deep(.p-inputnumber-input) {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .field {
@@ -211,7 +224,7 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .ph-row {
     grid-template-columns: 1fr;
   }

@@ -19,6 +19,7 @@ import { extractApiError } from '../utils/errors'
 
 const props = defineProps<{
   growPhaseId: string
+  readonly?: boolean
 }>()
 
 const store = useApiStore()
@@ -233,6 +234,7 @@ defineExpose({
           <Tag value="PHASE-WIDE" severity="success" rounded />
           <span class="phase-title">Phase nutrient dosing</span>
           <Button
+            v-if="!readonly"
             label="Add"
             icon="pi pi-plus"
             size="small"
@@ -253,7 +255,7 @@ defineExpose({
               >{{ row.doseMlPerL }} mL/L</span
             >
             <span class="muted order">#{{ row.sortOrder }}</span>
-            <div class="row-actions">
+            <div v-if="!readonly" class="row-actions">
               <Button
                 icon="pi pi-pencil"
                 severity="secondary"
@@ -281,12 +283,16 @@ defineExpose({
         </div>
         <div v-else class="empty-state">
           <span class="pi pi-flask empty-icon" />
-          <p>No nutrients configured for this phase. Click <strong>Add</strong> to start.</p>
+          <p v-if="!readonly">
+            No nutrients configured for this phase. Click <strong>Add</strong> to start.
+          </p>
+          <p v-else>No nutrients configured for this phase.</p>
         </div>
       </template>
     </Card>
 
     <Dialog
+      v-if="!readonly"
       v-model:visible="dialogOpen"
       :header="isEdit ? 'Edit phase nutrient' : 'Add phase nutrient'"
       :style="{ width: '90vw', maxWidth: '480px' }"

@@ -1690,6 +1690,11 @@ function fmtTime(dayStartMinutes: number): string {
   color: var(--color-text-primary);
 }
 
+.section-hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .tab-section {
   display: flex;
   flex-direction: column;
@@ -2002,6 +2007,50 @@ function fmtTime(dayStartMinutes: number): string {
 
 .env-coverage-list li {
   margin: 0.125rem 0;
+}
+
+.nutrient-phase-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.nutrient-phase-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.nutrient-phase-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.nutrient-phase-order {
+  background: var(--color-info);
+  color: #ffffff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.nutrient-phase-name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.nutrient-phase-locked {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .nutrient-phase-actions {

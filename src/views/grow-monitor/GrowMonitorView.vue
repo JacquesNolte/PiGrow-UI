@@ -32,6 +32,7 @@ import ExtendPhaseDialog from './ExtendPhaseDialog.vue'
 
 const HistoryTab = defineAsyncComponent(() => import('./HistoryTab.vue'))
 const PlanTab = defineAsyncComponent(() => import('./PlanTab.vue'))
+const NutrientsTab = defineAsyncComponent(() => import('./NutrientsTab.vue'))
 
 const router = useRouter()
 const store = useApiStore()
@@ -61,7 +62,7 @@ const {
   totalDurationDays,
 } = state
 
-const activeTab = ref<'overview' | 'history' | 'plan'>('overview')
+const activeTab = ref<'overview' | 'history' | 'plan' | 'nutrients'>('overview')
 
 const phaseMenu = useTemplateRef<InstanceType<typeof Menu>>('phaseMenu')
 const showExtendDialog = ref(false)
@@ -455,6 +456,10 @@ onUnmounted(() => {
             @click.stop="togglePhaseMenu"
           />
         </Tab>
+        <Tab value="nutrients">
+          <i class="pi pi-flask" />
+          <span>Nutrients</span>
+        </Tab>
       </TabList>
       <Menu ref="phaseMenu" :model="phaseMenuItems" popup />
 
@@ -467,6 +472,9 @@ onUnmounted(() => {
         </TabPanel>
         <TabPanel value="plan">
           <PlanTab />
+        </TabPanel>
+        <TabPanel value="nutrients">
+          <NutrientsTab />
         </TabPanel>
       </TabPanels>
     </Tabs>

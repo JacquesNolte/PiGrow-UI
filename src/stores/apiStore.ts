@@ -8,10 +8,12 @@ import { usePhaseNutrientStore } from './phaseNutrientStore'
 import { useSensorStore } from './sensorStore'
 import { useTelemetryStore } from './telemetryStore'
 import { useAutomationRuleStore } from './automationRuleStore'
+import { useDosingLogStore } from './dosingLogStore'
 import axios from 'axios'
 import { API_BASE } from './apiBase'
+import type { DosingWarningCode } from '../types/grow'
 
-export type DosingWarningCode = 'NO_NUTRIENTS_CONFIGURED' | 'NO_PH_BANDS' | 'RESERVOIR_TOO_SMALL'
+export type { DosingWarningCode }
 
 export interface DosingPreviewPayload {
   reservoirLiters: number
@@ -33,6 +35,7 @@ export const useApiStore = defineStore('api', () => {
   const sensorStore = useSensorStore()
   const telemetryStore = useTelemetryStore()
   const automationRuleStore = useAutomationRuleStore()
+  const dosingLogStore = useDosingLogStore()
 
   async function previewDosing(growPhaseId: string, payload: DosingPreviewPayload) {
     const res = await axios.post(`${API_BASE}/grow-phases/${growPhaseId}/dosing/preview`, payload)
@@ -80,6 +83,12 @@ export const useApiStore = defineStore('api', () => {
     deletePhaseEnvironment: growPhaseStore.deletePhaseEnvironment,
     deleteRule: automationRuleStore.deleteRule,
     dosing,
+    dosingLogs: {
+      create: dosingLogStore.create,
+      get: dosingLogStore.get,
+      list: dosingLogStore.list,
+      remove: dosingLogStore.remove,
+    },
     deleteSensor: sensorStore.deleteSensor,
     endGrow: growCycleStore.endGrow,
     extendActivePhase: growCycleStore.extendActivePhase,

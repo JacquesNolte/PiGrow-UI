@@ -7,13 +7,13 @@ import Message from 'primevue/message'
 import { useApiStore } from '../stores/apiStore'
 import { useNutrientStore } from '../stores/nutrientStore'
 import { extractApiError } from '../utils/errors'
-
-type WarningCode = 'NO_NUTRIENTS_CONFIGURED' | 'NO_PH_BANDS' | 'RESERVOIR_TOO_SMALL'
+import { dosingWarningLabel } from '../utils/dosingWarnings'
+import type { DosingWarningCode } from '../types/grow'
 
 interface DosingPreviewResult {
   mlByNutrientId: Record<string, number>
   totalMl: number
-  warnings: WarningCode[]
+  warnings: DosingWarningCode[]
 }
 
 const props = defineProps<{ growPhaseId: string; modelValue: boolean }>()
@@ -25,12 +25,6 @@ const reservoirLiters = ref(1)
 const loading = ref(false)
 const result = ref<DosingPreviewResult | null>(null)
 const error = ref<string | null>(null)
-
-const warningText: Record<WarningCode, string> = {
-  NO_NUTRIENTS_CONFIGURED: 'No nutrients configured for this phase.',
-  NO_PH_BANDS: "No pH bands configured for this phase. Auto-dosing won't correct drift.",
-  RESERVOIR_TOO_SMALL: 'Reservoir volume must be > 0.',
-}
 
 const nutrientById = computed(() => new Map(nutrientStore.nutrients.map((n) => [n.id, n.name])))
 const rows = computed(() =>
@@ -103,7 +97,7 @@ async function calculate() {
           data-testid="dosing-warning"
           severity="warn"
         >
-          {{ warningText[warning] ?? warning }}
+          {{ dosingWarningLabel(warning) }}
         </Message>
       </section>
     </div>
