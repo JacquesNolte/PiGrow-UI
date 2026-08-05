@@ -43,6 +43,8 @@ import {
   parseDateOnly,
   recalculatePhaseDates,
 } from '../../utils/growDates'
+import { DEFAULT_PHASE_DEFS, type PhaseDefaultConfig } from '../../utils/growPhaseDefaults'
+import { buildDefaultAutomationPayloads } from '../../utils/growAutomationDefaults'
 import { extractApiError } from '../../utils/errors'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
@@ -125,79 +127,31 @@ function genLocalKey(prefix: string): string {
   return `${prefix}-${++localKeySeq}`
 }
 
+const phaseDefaultsByLocalKey = ref<Map<string, PhaseDefaultConfig>>(new Map())
+
 function getDefaultPhases(): GrowPhase[] {
-  return [
-    {
-      dayDurationMinutes: 1080,
-      dayStartMinutes: 360,
-      durationDays: 7,
+  const list: GrowPhase[] = []
+  const map = new Map<string, PhaseDefaultConfig>()
+  for (const def of DEFAULT_PHASE_DEFS) {
+    const localKey = genLocalKey('phase')
+    list.push({
+      dayDurationMinutes: def.dayDurationMinutes,
+      dayStartMinutes: def.dayStartMinutes,
+      durationDays: def.durationDays,
       endAt: null,
       isActive: false,
-      localKey: genLocalKey('phase'),
-      name: 'Germination',
-      order: 1,
-      phMax: null,
-      phMin: null,
-      phTarget: null,
+      localKey,
+      name: def.name,
+      order: def.order,
+      phMax: def.ph.phMax,
+      phMin: def.ph.phMin,
+      phTarget: def.ph.phTarget,
       startAt: null,
-    },
-    {
-      dayDurationMinutes: 1080,
-      dayStartMinutes: 360,
-      durationDays: 14,
-      endAt: null,
-      isActive: false,
-      localKey: genLocalKey('phase'),
-      name: 'Seedling',
-      order: 2,
-      phMax: null,
-      phMin: null,
-      phTarget: null,
-      startAt: null,
-    },
-    {
-      dayDurationMinutes: 1080,
-      dayStartMinutes: 360,
-      durationDays: 28,
-      endAt: null,
-      isActive: false,
-      localKey: genLocalKey('phase'),
-      name: 'Vegetative',
-      order: 3,
-      phMax: null,
-      phMin: null,
-      phTarget: null,
-      startAt: null,
-    },
-    {
-      dayDurationMinutes: 1080,
-      dayStartMinutes: 360,
-      durationDays: 56,
-      endAt: null,
-      isActive: false,
-      localKey: genLocalKey('phase'),
-      name: 'Flowering',
-      order: 4,
-      phMax: null,
-      phMin: null,
-      phTarget: null,
-      startAt: null,
-    },
-    {
-      dayDurationMinutes: 1080,
-      dayStartMinutes: 360,
-      durationDays: 14,
-      endAt: null,
-      isActive: false,
-      localKey: genLocalKey('phase'),
-      name: 'Flush',
-      order: 5,
-      phMax: null,
-      phMin: null,
-      phTarget: null,
-      startAt: null,
-    },
-  ]
+    })
+    map.set(localKey, { dayEnv: def.dayEnv, nightEnv: def.nightEnv, ph: def.ph })
+  }
+  phaseDefaultsByLocalKey.value = map
+  return list
 }
 
 watch(
@@ -1042,8 +996,49 @@ const handleSave = async () => {
         return
       }
 
+      await store.fetchDevices(form.value.controllerId)
+      const defaultFailures: string[] = []
       for (const phase of sortedPhases.value) {
         await savePhase(phase, created.id)
+        const phaseId = phase.id
+        if (!phaseId || !phase.localKey) {
+          continue
+        }
+        const defaults = phaseDefaultsByLocalKey.value.get(phase.localKey)
+        if (defaults) {
+          const results = await Promise.allSettled([
+            store.upsertPhaseEnvironment(phaseId, 'DAY', defaults.dayEnv),
+            store.upsertPhaseEnvironment(phaseId, 'NIGHT', defaults.nightEnv),
+            store.updateGrowPhase(phaseId, {
+              phMax: defaults.ph.phMax,
+              phMin: defaults.ph.phMin,
+              phTarget: defaults.ph.phTarget,
+            }),
+          ])
+          const labels = ['DAY env', 'NIGHT env', 'pH band']
+          results.forEach((r, i) => {
+            if (r.status === 'rejected') {
+              defaultFailures.push(`${phase.name} ${labels[i]}`)
+            }
+          })
+        }
+        const rulePayloads = buildDefaultAutomationPayloads(controllerDevices.value, phaseId)
+        if (rulePayloads.length > 0) {
+          const ruleResults = await Promise.allSettled(
+            rulePayloads.map((p) => ruleStore.createRule(p)),
+          )
+          if (ruleResults.some((r) => r.status === 'rejected')) {
+            defaultFailures.push(`${phase.name} automation rules`)
+          }
+        }
+      }
+      if (defaultFailures.length > 0) {
+        toast.add({
+          detail: `Defaults failed for: ${defaultFailures.join(', ')}. Grow created; edit phases to finish.`,
+          life: 8000,
+          severity: 'warn',
+          summary: 'Some defaults failed',
+        })
       }
 
       const growActive = deriveGrowActive(startAtDate, sortedPhases.value)
