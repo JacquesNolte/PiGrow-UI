@@ -382,6 +382,46 @@ export interface CreateDosingLogPayload {
   notes?: string | null
 }
 
+export interface Camera {
+  id: string
+  name: string
+  streamName: string
+  controllerId: string | null
+  webrtcUrl: string
+  snapshotUrl: string
+  warnings: string[]
+  createdAt: string
+  updatedAt: string
+  snapshotIntervalMinutes: number | null
+}
+
+export interface CameraSnapshot {
+  id: string
+  cameraId: string
+  growCycleId: string | null
+  growPhaseId: string | null
+  controllerId: string | null
+  bytes: number
+  capturedAt: string
+  imageUrl: string
+}
+
+export interface CreateCameraPayload {
+  name: string
+  streamName: string
+  rtspUrl: string
+  controllerId?: string | null
+  snapshotIntervalMinutes?: number | null
+}
+
+export interface UpdateCameraPayload {
+  name?: string
+  streamName?: string
+  rtspUrl?: string
+  controllerId?: string | null
+  snapshotIntervalMinutes?: number | null
+}
+
 export interface UICommand {
   deviceId: string
   action: 'ON' | 'OFF'
