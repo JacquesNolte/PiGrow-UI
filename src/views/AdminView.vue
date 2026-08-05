@@ -11,6 +11,7 @@ import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
+import type { GrowCycleListItem } from '../types/grow'
 
 const store = useApiStore()
 const router = useRouter()
@@ -20,6 +21,14 @@ const confirm = useConfirm()
 onMounted(() => {
   store.fetchAll()
 })
+
+function growSetupSummary(cycle: GrowCycleListItem): string {
+  const parts: string[] = []
+  if (cycle.plantStrain) parts.push(cycle.plantStrain)
+  if (cycle.numberOfPlants) parts.push(`${cycle.numberOfPlants}×`)
+  if (cycle.growMedium) parts.push(cycle.growMedium)
+  return parts.length > 0 ? parts.join(' · ') : '—'
+}
 
 function confirmDeleteController(id: string, name: string) {
   confirm.require({
@@ -186,6 +195,12 @@ async function deleteGrowCycle(id: string, name: string) {
               <span v-else class="muted">—</span>
             </template>
           </Column>
+          <Column header="Grow Setup">
+            <template #body="slotProps">
+              <span v-if="growSetupSummary(slotProps.data) === '—'" class="muted">—</span>
+              <span v-else class="grow-setup-summary">{{ growSetupSummary(slotProps.data) }}</span>
+            </template>
+          </Column>
           <Column header="Actions" style="width: 140px">
             <template #body="slotProps">
               <div class="row-actions">
@@ -281,6 +296,11 @@ async function deleteGrowCycle(id: string, name: string) {
 .muted {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
+}
+
+.grow-setup-summary {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
 }
 
 .empty-state {

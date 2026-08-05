@@ -80,7 +80,16 @@ const confirm = useConfirm()
 const growId = computed(() => route.params.id as string | undefined)
 const isEditMode = computed(() => Boolean(growId.value))
 
-const form = ref({ controllerId: '', name: '' })
+const form = ref({
+  controllerId: '',
+  name: '',
+  growMedium: '',
+  growMediumBrand: '',
+  numberOfPlants: null as number | null,
+  plantType: '',
+  plantStrain: '',
+  seedBrand: '',
+})
 const growStartDate = ref<Date>(new Date())
 const phases = ref<GrowPhase[]>([])
 const ready = ref(false)
@@ -88,27 +97,30 @@ const saving = ref(false)
 const previousActivePhaseId = ref<string | null>(null)
 const initialSnapshot = ref<string>('')
 
-function captureSnapshot() {
-  initialSnapshot.value = JSON.stringify({
+function snapshotData() {
+  return {
     controllerId: form.value.controllerId,
     name: form.value.name,
     phases: phases.value,
     startAt: formatDate(growStartDate.value),
-  })
+    growMedium: form.value.growMedium,
+    growMediumBrand: form.value.growMediumBrand,
+    numberOfPlants: form.value.numberOfPlants,
+    plantType: form.value.plantType,
+    plantStrain: form.value.plantStrain,
+    seedBrand: form.value.seedBrand,
+  }
+}
+
+function captureSnapshot() {
+  initialSnapshot.value = JSON.stringify(snapshotData())
 }
 
 const isDirty = computed(() => {
   if (!ready.value || !initialSnapshot.value) {
     return false
   }
-  return (
-    JSON.stringify({
-      controllerId: form.value.controllerId,
-      name: form.value.name,
-      phases: phases.value,
-      startAt: formatDate(growStartDate.value),
-    }) !== initialSnapshot.value
-  )
+  return JSON.stringify(snapshotData()) !== initialSnapshot.value
 })
 useUnsavedGuard(isDirty)
 
@@ -183,6 +195,12 @@ async function loadExistingCycle(id: string) {
   const cycle = await store.fetchGrowCycle(id)
   form.value.controllerId = cycle.controllerId ?? ''
   form.value.name = cycle.name
+  form.value.growMedium = cycle.growMedium ?? ''
+  form.value.growMediumBrand = cycle.growMediumBrand ?? ''
+  form.value.numberOfPlants = cycle.numberOfPlants ?? null
+  form.value.plantType = cycle.plantType ?? ''
+  form.value.plantStrain = cycle.plantStrain ?? ''
+  form.value.seedBrand = cycle.seedBrand ?? ''
   if (cycle.startAt) {
     growStartDate.value = parseDateOnly(cycle.startAt)
   }
@@ -936,6 +954,17 @@ async function autoCreateFromEnv() {
 
 // ---------- Save ---------
 
+function metadataFromForm() {
+  return {
+    growMedium: form.value.growMedium.trim() || null,
+    growMediumBrand: form.value.growMediumBrand.trim() || null,
+    numberOfPlants: form.value.numberOfPlants ?? null,
+    plantType: form.value.plantType.trim() || null,
+    plantStrain: form.value.plantStrain.trim() || null,
+    seedBrand: form.value.seedBrand.trim() || null,
+  }
+}
+
 const handleSave = async () => {
   if (!form.value.controllerId) {
     console.error('controllerId is required')
@@ -951,6 +980,7 @@ const handleSave = async () => {
           isActive: growActive,
           name: form.value.name,
           startAt: startAtDate,
+          ...metadataFromForm(),
         })
       } catch (error) {
         const { message, status } = extractApiError(error, 'Failed to update grow cycle')
@@ -980,6 +1010,7 @@ const handleSave = async () => {
           controllerId: form.value.controllerId,
           name: form.value.name,
           startAt: startAtDate,
+          ...metadataFromForm(),
         })
       } catch (error) {
         const { message, status } = extractApiError(error, 'Failed to create grow cycle')
@@ -1136,6 +1167,76 @@ function fmtTime(dayStartMinutes: number): string {
                     class="full-width"
                   />
                 </div>
+              </div>
+              <div class="grow-setup-section">
+                <h4 class="grow-setup-title">Grow Setup</h4>
+                <div class="details-grid">
+                  <div class="field">
+                    <label for="grow-medium" class="field-label">Grow Medium</label>
+                    <InputText
+                      id="grow-medium"
+                      v-model="form.growMedium"
+                      placeholder="Coco Coir"
+                      maxlength="100"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="grow-medium-brand" class="field-label">Medium Brand</label>
+                    <InputText
+                      id="grow-medium-brand"
+                      v-model="form.growMediumBrand"
+                      placeholder="Canna"
+                      maxlength="100"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="grow-num-plants" class="field-label">Number of Plants</label>
+                    <InputNumber
+                      inputId="grow-num-plants"
+                      v-model="form.numberOfPlants"
+                      :min="1"
+                      :allowEmpty="true"
+                      :maxFractionDigits="0"
+                      placeholder="—"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="grow-plant-type" class="field-label">Plant Type</label>
+                    <InputText
+                      id="grow-plant-type"
+                      v-model="form.plantType"
+                      placeholder="Autoflower"
+                      maxlength="50"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="grow-plant-strain" class="field-label">Plant Strain</label>
+                    <InputText
+                      id="grow-plant-strain"
+                      v-model="form.plantStrain"
+                      placeholder="Blue Dream"
+                      maxlength="100"
+                      class="full-width"
+                    />
+                  </div>
+                  <div class="field">
+                    <label for="grow-seed-brand" class="field-label">Seed Brand</label>
+                    <InputText
+                      id="grow-seed-brand"
+                      v-model="form.seedBrand"
+                      placeholder="Dutch Passion"
+                      maxlength="100"
+                      class="full-width"
+                    />
+                  </div>
+                </div>
+                <p class="form-hint">
+                  All fields optional. Leave blank to keep a grow unattributed.
+                </p>
               </div>
               <p v-if="isEditMode" class="form-hint">
                 Controller assignment is locked for the lifetime of a grow. To move this run to a
@@ -1725,6 +1826,22 @@ function fmtTime(dayStartMinutes: number): string {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   font-style: italic;
+}
+
+.grow-setup-section {
+  margin-top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.grow-setup-title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
 }
 
 .full-width {

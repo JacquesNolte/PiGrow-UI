@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useProvidedGrowMonitorState } from './useGrowMonitorState'
@@ -28,10 +29,39 @@ function openEnvEditor() {
     router.push(`/admin/grows/edit/${state.currentCycle.value.id}`)
   }
 }
+
+const setupRows = computed(() => {
+  const c = state.currentCycle.value
+  return [
+    { label: 'Strain', value: c?.plantStrain ?? null },
+    {
+      label: 'Plants',
+      value: c?.numberOfPlants != null ? String(c.numberOfPlants) : null,
+    },
+    { label: 'Type', value: c?.plantType ?? null },
+    { label: 'Medium', value: c?.growMedium ?? null },
+    { label: 'Medium Brand', value: c?.growMediumBrand ?? null },
+    { label: 'Seed Brand', value: c?.seedBrand ?? null },
+  ]
+})
 </script>
 
 <template>
   <div class="overview-tab">
+    <Card>
+      <template #title>Grow Setup</template>
+      <template #content>
+        <div class="setup-grid">
+          <div v-for="row in setupRows" :key="row.label" class="setup-row">
+            <span class="setup-label">{{ row.label }}</span>
+            <span :class="row.value ? 'setup-value' : 'setup-value setup-value--muted'">
+              {{ row.value ?? 'Not set' }}
+            </span>
+          </div>
+        </div>
+      </template>
+    </Card>
+
     <Card>
       <template #title>
         <div class="section-title-row">
@@ -249,6 +279,38 @@ function openEnvEditor() {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+}
+
+.setup-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3) var(--space-5);
+}
+
+.setup-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.setup-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.setup-value {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.setup-value--muted {
+  color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .section-title-row {

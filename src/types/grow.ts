@@ -164,7 +164,16 @@ export interface Controller {
   updatedAt: string
 }
 
-export interface GrowCycleListItem {
+export interface GrowCycleMetadata {
+  growMedium: string | null
+  growMediumBrand: string | null
+  numberOfPlants: number | null
+  plantType: string | null
+  plantStrain: string | null
+  seedBrand: string | null
+}
+
+export interface GrowCycleListItem extends GrowCycleMetadata {
   id: string
   controllerId: string
   name: string
@@ -178,7 +187,7 @@ export interface GrowCycleListItem {
   }
 }
 
-export interface GrowCycle {
+export interface GrowCycle extends GrowCycleMetadata {
   id: string
   controllerId: string
   name: string

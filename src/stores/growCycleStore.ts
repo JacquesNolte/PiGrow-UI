@@ -12,9 +12,15 @@ function toListItem(cycle: GrowCycle): GrowCycleListItem {
     },
     controllerId: cycle.controllerId,
     createdAt: cycle.createdAt,
+    growMedium: cycle.growMedium ?? null,
+    growMediumBrand: cycle.growMediumBrand ?? null,
     id: cycle.id,
     isActive: cycle.isActive,
     name: cycle.name,
+    numberOfPlants: cycle.numberOfPlants ?? null,
+    plantStrain: cycle.plantStrain ?? null,
+    plantType: cycle.plantType ?? null,
+    seedBrand: cycle.seedBrand ?? null,
     startAt: cycle.startAt ?? null,
     updatedAt: cycle.updatedAt,
   }
@@ -25,12 +31,24 @@ export interface CreateGrowCyclePayload {
   controllerId: string
   isActive?: boolean
   startAt?: string
+  growMedium?: string | null
+  growMediumBrand?: string | null
+  numberOfPlants?: number | null
+  plantType?: string | null
+  plantStrain?: string | null
+  seedBrand?: string | null
 }
 
 export interface UpdateGrowCyclePayload {
   name?: string
   isActive?: boolean
   startAt?: string
+  growMedium?: string | null
+  growMediumBrand?: string | null
+  numberOfPlants?: number | null
+  plantType?: string | null
+  plantStrain?: string | null
+  seedBrand?: string | null
 }
 
 export const useGrowCycleStore = defineStore('growCycle', () => {
