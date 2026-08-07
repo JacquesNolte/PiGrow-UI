@@ -11,7 +11,9 @@ const router = useRouter()
     <Card class="not-found-card">
       <template #content>
         <div class="not-found-content">
-          <i class="pi pi-map-marker not-found-icon" aria-hidden="true" />
+          <div class="not-found-logo-frame">
+            <img class="not-found-logo" src="/logo.png" alt="PiGrow" />
+          </div>
           <h1 class="not-found-title">Route not found</h1>
           <p class="not-found-sub">
             The page you tried to open doesn't exist (or no longer exists). Check the URL, or jump
@@ -59,11 +61,24 @@ const router = useRouter()
   padding: var(--space-4);
 }
 
-.not-found-icon {
-  font-size: 2.5rem;
-  color: var(--color-accent);
-  opacity: 0.85;
+.not-found-logo-frame {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   margin-bottom: var(--space-2);
+}
+
+.not-found-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .not-found-title {

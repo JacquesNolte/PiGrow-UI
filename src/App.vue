@@ -2,6 +2,7 @@
   <div class="app-shell">
     <nav class="nav">
       <div class="brand">
+        <img class="brand-mark" src="/favicon.png" alt="PiGrow" />
         <span class="brand-name">PiGrow</span>
         <span class="brand-divider">/</span>
         <span class="brand-suffix">Control Center</span>
@@ -69,23 +70,20 @@ onMounted(() => {
   letter-spacing: var(--tracking-tight);
 }
 
+.brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-md);
+  display: block;
+  flex-shrink: 0;
+}
+
 .brand-name {
   color: var(--color-text-primary);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.brand-name::before {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  box-shadow: 0 0 8px var(--color-accent);
-  animation: pulse-dot 2s var(--ease-default) infinite;
 }
 
 .brand-divider {
