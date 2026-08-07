@@ -34,6 +34,7 @@ const HistoryTab = defineAsyncComponent(() => import('./HistoryTab.vue'))
 const PlanTab = defineAsyncComponent(() => import('./PlanTab.vue'))
 const NutrientsTab = defineAsyncComponent(() => import('./NutrientsTab.vue'))
 const LiveFeedTab = defineAsyncComponent(() => import('./LiveFeedTab.vue'))
+const NotesTab = defineAsyncComponent(() => import('./NotesTab.vue'))
 
 const router = useRouter()
 const store = useApiStore()
@@ -63,7 +64,9 @@ const {
   totalDurationDays,
 } = state
 
-const activeTab = ref<'overview' | 'history' | 'plan' | 'nutrients' | 'live-feed'>('overview')
+const activeTab = ref<'overview' | 'history' | 'plan' | 'nutrients' | 'live-feed' | 'notes'>(
+  'overview',
+)
 
 const phaseMenu = useTemplateRef<InstanceType<typeof Menu>>('phaseMenu')
 const showExtendDialog = ref(false)
@@ -294,22 +297,39 @@ onMounted(async () => {
   }, 1000)
 
   const cycle = await store.fetchGrowCycle(cycleId.value)
-  if (cycle?.controller) {
-    const ctrlIdx = store.controllers.findIndex((c) => c.id === cycle.controllerId)
-    if (ctrlIdx !== -1) {
-      store.controllers[ctrlIdx] = { ...store.controllers[ctrlIdx], ...cycle.controller }
-    } else {
-      store.controllers.push(cycle.controller)
-    }
-  }
+
+  // The cycle detail response only carries `controller: { name, status }` — no
+  // id, ipAddress, or macAddress. On a cold refresh `store.controllers` is
+  // empty, so pushing that summary straight in leaves an id-less entry;
+  // `fetchDevices()` then can't match it by id and silently drops every
+  // device, and the device toggles vanish. Fetch the full controller record so
+  // the store entry is matchable, then load + poll devices.
   if (cycle?.controllerId) {
+    await store.fetchController(cycle.controllerId)
     await store.fetchDevices(cycle.controllerId)
     store.pollDevices(cycle.controllerId, 15_000)
   }
-  await reconcileGrowState(cycle)
+
+  // Start live telemetry + the realtime socket BEFORE phase reconciliation.
+  // `reconcileGrowState()` can throw (e.g. activateGrowPhase/updateGrowPhase
+  // network errors), and `start()` was previously called after it — so a throw
+  // aborted onMounted with no socket and no `seedFromApi()`, leaving
+  // temperature/humidity stuck at 0 until the next event. Seeding telemetry
+  // and connecting the socket first decouples them from phase reconciliation.
+  state.liveTelemetry.start()
+  const sock = state.liveTelemetry.socket.value
+  if (sock) {
+    sock.on('device_state_update', state.handleDeviceStateUpdate)
+    sock.on('connect', state.handleSocketReconnect)
+  }
+
+  try {
+    await reconcileGrowState(cycle)
+  } catch (error) {
+    console.error('[grow-monitor] Phase reconciliation failed:', error)
+  }
   await state.loadActivePhaseEnv()
   await state.automations.reload()
-  state.liveTelemetry.start()
 
   // Stale device state detection — poll devices if a state update is missed.
   const STALE_STATE_MS = 30_000
@@ -327,12 +347,6 @@ onMounted(async () => {
       }
     }
   }, 15_000)
-
-  const sock = state.liveTelemetry.socket.value
-  if (sock) {
-    sock.on('device_state_update', state.handleDeviceStateUpdate)
-    sock.on('connect', state.handleSocketReconnect)
-  }
 })
 
 onUnmounted(() => {
@@ -465,6 +479,10 @@ onUnmounted(() => {
           <i class="pi pi-video" />
           <span>Live Feed</span>
         </Tab>
+        <Tab value="notes">
+          <i class="pi pi-bookmark" />
+          <span>Notes</span>
+        </Tab>
       </TabList>
       <Menu ref="phaseMenu" :model="phaseMenuItems" popup />
 
@@ -483,6 +501,9 @@ onUnmounted(() => {
         </TabPanel>
         <TabPanel value="live-feed">
           <LiveFeedTab />
+        </TabPanel>
+        <TabPanel value="notes">
+          <NotesTab />
         </TabPanel>
       </TabPanels>
     </Tabs>

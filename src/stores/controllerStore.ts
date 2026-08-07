@@ -50,6 +50,8 @@ export const useControllerStore = defineStore('controller', () => {
     const idx = controllers.value.findIndex((c) => c.id === id)
     if (idx !== -1) {
       controllers.value[idx] = res.data
+    } else {
+      controllers.value.push(res.data)
     }
     return res.data as Controller
   }

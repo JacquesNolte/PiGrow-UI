@@ -88,6 +88,24 @@ const TextareaStub = defineComponent({
   },
 })
 
+// TipTap's EditorContent renders the contenteditable surface; in tests we
+// stub it with a textarea so a test can drive the editor body via
+// `data-testid="gn-editor"` without instantiating the real ProseMirror view.
+const EditorContentStub = defineComponent({
+  name: 'EditorContentStub',
+  props: ['editor'],
+  setup(props, { attrs }) {
+    return () =>
+      h('textarea', {
+        'data-testid': (attrs as Record<string, unknown>)['data-testid'] ?? 'gn-editor',
+        onInput: (event: Event) => {
+          const ed = props.editor as { commands: { setContent: (s: string) => void } } | undefined
+          ed?.commands.setContent((event.target as HTMLTextAreaElement).value)
+        },
+      })
+  },
+})
+
 // PrimeVue's Tabs/TabList/TabPanels components use a context-injected active
 // value to decide which TabPanel to show. A `true` stub drops the default slot
 // entirely, hiding every panel; a passthrough stub at least lets the test
@@ -185,4 +203,5 @@ export const primeVueStubs: Record<string, true | ConcreteComponent> = {
   'primevue/tag': true,
   'primevue/textarea': TextareaStub as unknown as ConcreteComponent,
   Textarea: TextareaStub as unknown as ConcreteComponent,
+  EditorContent: EditorContentStub as unknown as ConcreteComponent,
 }

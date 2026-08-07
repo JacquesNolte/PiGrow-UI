@@ -451,6 +451,26 @@ export interface DeviceStateLog {
   createdAt: string
 }
 
+export interface GrowCycleNote {
+  id: string
+  growCycleId: string
+  activeGrowPhaseId: string | null
+  title: string | null
+  note: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateGrowCycleNotePayload {
+  title?: string
+  note: string
+}
+
+export interface UpdateGrowCycleNotePayload {
+  title?: string | null
+  note?: string
+}
+
 // TODO: when a device history view is built, render `reason` tolerating new
 // AUTO reason strings: "day cycle start (phase <id>)", "night cycle start
 // (phase <id>)", "ALWAYS_ON rule (<id>)", "ALWAYS_OFF rule (<id>)" (alongside
