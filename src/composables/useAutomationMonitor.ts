@@ -1,11 +1,5 @@
 import { computed, reactive, ref, watch } from 'vue'
-import {
-  AutomationMode,
-  DayNightPeriod,
-  DeviceAction,
-  RuleCondition,
-  SensorType,
-} from '../types/grow'
+import { DayNightPeriod, DeviceAction, RuleCondition, SensorType } from '../types/grow'
 import type { AutomationRule, Device, PhaseEnvironment } from '../types/grow'
 import {
   conditionShort,

@@ -57,7 +57,7 @@ export const useApiStore = defineStore('api', () => {
     loading.value = true
     try {
       await Promise.all([controllerStore.fetchAll(), growCycleStore.fetchAll()])
-    } catch (error) {
+    } catch {
     } finally {
       loading.value = false
     }
