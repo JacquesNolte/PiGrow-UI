@@ -90,7 +90,7 @@ const statusSeverity = (status: string) => (status === 'ONLINE' ? 'success' : 'd
         </DataTable>
 
         <div v-else class="empty-state">
-          <span class="pi pi-server empty-icon"></span>
+          <span class="pi pi-server empty-icon" aria-hidden="true"></span>
           <p>No controller nodes are reporting. Register a controller in Admin to get started.</p>
         </div>
       </template>

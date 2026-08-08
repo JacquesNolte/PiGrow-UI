@@ -33,6 +33,8 @@ const scanError = ref<string | null>(null)
 const scanning = ref(false)
 const scanStartedAt = ref<number | null>(null)
 const scansCompleted = ref(0)
+const nowMs = ref(0)
+const announce = ref('')
 
 let scanTimer: ReturnType<typeof setInterval> | null = null
 let stopTimer: ReturnType<typeof setTimeout> | null = null
@@ -41,8 +43,10 @@ const elapsedSeconds = computed(() => {
   if (scanStartedAt.value === null) {
     return 0
   }
-  return Math.min(SCAN_DURATION_MS / 1000, Math.floor((Date.now() - scanStartedAt.value) / 1000))
+  return Math.min(SCAN_DURATION_MS / 1000, Math.floor((nowMs.value - scanStartedAt.value) / 1000))
 })
+
+const remainingSeconds = computed(() => Math.max(0, SCAN_DURATION_MS / 1000 - elapsedSeconds.value))
 
 function applyScanResults(results: DiscoveredController[]) {
   const seenMacs = new Set<string>()
@@ -75,6 +79,7 @@ function clearTimers() {
 }
 
 async function runScan() {
+  nowMs.value = Date.now()
   try {
     const res = await store.scanControllers()
     scansCompleted.value += 1
@@ -89,6 +94,7 @@ async function runScan() {
 function startScanning() {
   scanning.value = true
   scanStartedAt.value = Date.now()
+  nowMs.value = scanStartedAt.value
   scansCompleted.value = 0
   scanError.value = null
   rows.value = []
@@ -142,6 +148,7 @@ async function claim(row: RowState) {
       severity: 'success',
       summary: 'Claimed',
     })
+    announce.value = 'Controller claimed, opening configuration…'
     await router.push(`/admin/controllers/edit/${claimed.id}`)
   } catch (error) {
     const { status, message } = extractApiError(error, 'Claim failed')
@@ -191,13 +198,20 @@ defineExpose({
 
 <template>
   <div class="scan-page">
+    <span class="visually-hidden" role="status" aria-live="polite">{{ announce }}</span>
     <Card>
       <template #title>
         <div class="section-header">
           <span>Scan for Controllers</span>
           <div class="header-actions">
             <Tag v-if="scanning" :value="`Scanning… ${elapsedSeconds}s`" severity="info" rounded />
-            <Tag v-else value="Scan stopped" severity="secondary" rounded />
+            <Tag
+              v-if="scanning && elapsedSeconds > 20"
+              :value="`Scan ending in ${remainingSeconds}s`"
+              severity="warn"
+              rounded
+            />
+            <Tag v-else-if="!scanning" value="Scan stopped" severity="secondary" rounded />
             <Button
               v-if="!scanning"
               label="Scan Again"
@@ -338,6 +352,18 @@ defineExpose({
 <style scoped>
 .scan-page {
   width: 100%;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .section-header {

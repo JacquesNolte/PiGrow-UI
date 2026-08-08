@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
@@ -25,6 +25,7 @@ const props = defineProps<{
   initialRule?: AutomationRule
   initialCondition?: RuleCondition
   fieldError?: { field: FieldKey; message: string } | null
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -285,6 +286,14 @@ function emptyDraft(): Draft {
 
 const draft = ref<Draft>(emptyDraft())
 
+const deviceSelect = ref<{ $el?: HTMLElement } | null>(null)
+
+onMounted(() => {
+  void nextTick(() => {
+    deviceSelect.value?.$el?.querySelector<HTMLElement>('[role="combobox"], input')?.focus()
+  })
+})
+
 function hydrate() {
   if (props.mode === 'edit' && props.initialRule) {
     draft.value = {
@@ -416,6 +425,7 @@ function onSubmit() {
       <div class="field">
         <label class="field-label">Device</label>
         <Select
+          ref="deviceSelect"
           v-model="draft.deviceId"
           :options="deviceOptions"
           option-label="label"
@@ -574,6 +584,7 @@ function onSubmit() {
         severity="success"
         type="submit"
         :disabled="!isValid"
+        :loading="saving"
       />
     </div>
   </form>

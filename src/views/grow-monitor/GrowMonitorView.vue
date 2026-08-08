@@ -706,6 +706,8 @@ onUnmounted(() => {
 :deep(.monitor-tabs .p-tablist) {
   border-bottom: 1px solid var(--color-border);
   margin-bottom: var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 :deep(.monitor-tabs .p-tab) {

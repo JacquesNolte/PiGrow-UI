@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
@@ -25,6 +25,20 @@ const reservoirLiters = ref(1)
 const loading = ref(false)
 const result = ref<DosingPreviewResult | null>(null)
 const error = ref<string | null>(null)
+
+const reservoirInput = ref<{ $el?: HTMLElement } | null>(null)
+
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) {
+      void nextTick(() => {
+        reservoirInput.value?.$el?.querySelector('input')?.focus()
+      })
+    }
+  },
+  { immediate: true },
+)
 
 const nutrientById = computed(() => new Map(nutrientStore.nutrients.map((n) => [n.id, n.name])))
 const rows = computed(() =>
@@ -59,10 +73,11 @@ async function calculate() {
     :style="{ width: '90vw', maxWidth: '480px' }"
     @update:visible="emit('update:modelValue', $event)"
   >
-    <div class="form-stack">
+    <form class="form-stack" @submit.prevent="calculate">
       <div class="field">
         <label for="dosing-reservoir" class="field-label">Reservoir (liters)</label>
         <InputNumber
+          ref="reservoirInput"
           inputId="dosing-reservoir"
           data-testid="reservoir-liters"
           v-model="reservoirLiters"
@@ -75,8 +90,9 @@ async function calculate() {
         label="Calculate"
         icon="pi pi-calculator"
         data-testid="calculate-dosing"
+        type="submit"
         :loading="loading"
-        @click="calculate"
+        :disabled="loading"
       />
       <Message v-if="error" severity="error">{{ error }}</Message>
 
@@ -100,7 +116,7 @@ async function calculate() {
           {{ dosingWarningLabel(warning) }}
         </Message>
       </section>
-    </div>
+    </form>
   </Dialog>
 </template>
 

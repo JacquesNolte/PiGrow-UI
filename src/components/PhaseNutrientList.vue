@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import Button from 'primevue/button'
 import Card from 'primevue/card'
 import Dialog from 'primevue/dialog'
@@ -35,6 +35,16 @@ const dialogOpen = ref(false)
 const editingId = ref<string | null>(null)
 const draftNutrientId = ref<string | null>(null)
 const draftDose = ref<number>(0)
+
+const nutrientSelect = ref<{ $el?: HTMLElement } | null>(null)
+
+watch(dialogOpen, (open) => {
+  if (open) {
+    void nextTick(() => {
+      nutrientSelect.value?.$el?.querySelector<HTMLElement>('[role="combobox"], input')?.focus()
+    })
+  }
+})
 
 const nutrientById = computed(() => {
   const m = new Map<string, (typeof store.nutrients)[number]>()
@@ -305,6 +315,7 @@ defineExpose({
         <div class="field">
           <label for="pn-nutrient" class="field-label">Nutrient</label>
           <Select
+            ref="nutrientSelect"
             inputId="pn-nutrient"
             v-model="draftNutrientId"
             :options="nutrientOptions"

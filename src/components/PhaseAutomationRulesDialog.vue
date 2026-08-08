@@ -59,6 +59,7 @@ const confirm = useConfirm()
 const rules = ref<AutomationRule[]>([])
 const phaseEnv = ref<PhaseEnvironmentResponse | null>(null)
 const loading = ref(false)
+const loadError = ref<string | null>(null)
 const saving = ref(false)
 const mode = ref<'list' | 'create' | 'edit'>('list')
 const editingRule = ref<AutomationRule | null>(null)
@@ -186,6 +187,7 @@ async function loadRules() {
     return
   }
   loading.value = true
+  loadError.value = null
   try {
     const [fetchedRules, fetchedEnv] = await Promise.all([
       ruleStore.fetchRulesByPhase(phase.id),
@@ -195,6 +197,7 @@ async function loadRules() {
     phaseEnv.value = fetchedEnv
   } catch (error) {
     const { message } = extractApiError(error, 'Failed to load rules')
+    loadError.value = message
     toast.add({ detail: message, life: 6000, severity: 'error', summary: 'Load failed' })
   } finally {
     loading.value = false
@@ -331,7 +334,13 @@ function close() {
     </div>
 
     <div v-else-if="loading" class="loading">
-      <i class="pi pi-spin pi-spinner" /> Loading rules…
+      <i class="pi pi-spin pi-spinner" role="status" aria-label="Loading automation rules" />
+      Loading rules…
+    </div>
+
+    <div v-else-if="loadError" class="load-error">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true" /> {{ loadError }}
+      <Button label="Retry" severity="secondary" size="small" text @click="loadRules" />
     </div>
 
     <template v-else>
@@ -474,6 +483,7 @@ function close() {
               label="Add rule"
               icon="pi pi-plus"
               severity="success"
+              :loading="saving"
               :disabled="saving"
               @click="showAddForm()"
             />
@@ -490,6 +500,7 @@ function close() {
           :initial-rule="editingRule ?? undefined"
           :initial-condition="initialCondition"
           :field-error="fieldError"
+          :saving="saving"
           @cancel="cancelForm"
           @submit="handleSubmit"
         />
@@ -511,6 +522,15 @@ function close() {
   color: var(--color-text-muted);
   padding: var(--space-6);
   justify-content: center;
+}
+
+.load-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--color-danger);
+  padding: var(--space-6);
 }
 
 .empty-state {

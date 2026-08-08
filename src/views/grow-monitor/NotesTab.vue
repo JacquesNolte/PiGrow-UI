@@ -167,6 +167,7 @@ function onUpdated(note: GrowCycleNote) {
 function onDelete(note: GrowCycleNote) {
   confirm.require({
     accept: () => void doDelete(note.id),
+    acceptClass: 'p-button-danger',
     acceptLabel: 'Delete',
     acceptProps: { severity: 'danger' },
     header: 'Delete note',

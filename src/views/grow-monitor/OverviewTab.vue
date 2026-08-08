@@ -87,45 +87,50 @@ const setupRows = computed(() => {
           <div class="hero-metric" v-tooltip.top="'Temperature sensor'">
             <i class="pi pi-sun hero-metric-icon"></i>
             <div class="hero-metric-info">
-              <span class="hero-metric-value">
+              <span v-if="state.liveTelemetry.connected.value" class="hero-metric-value">
                 {{ state.temperatureC.value.toFixed(1) }}<span class="hero-metric-unit">°C</span>
               </span>
+              <span v-else class="hero-metric-value hero-metric-value--offline">—</span>
               <span class="hero-metric-label">Temperature</span>
             </div>
           </div>
           <div class="hero-metric" v-tooltip.top="'Humidity sensor'">
             <i class="pi pi-cloud hero-metric-icon"></i>
             <div class="hero-metric-info">
-              <span class="hero-metric-value">
+              <span v-if="state.liveTelemetry.connected.value" class="hero-metric-value">
                 {{ state.humidityPercent.value.toFixed(0) }}<span class="hero-metric-unit">%</span>
               </span>
+              <span v-else class="hero-metric-value hero-metric-value--offline">—</span>
               <span class="hero-metric-label">Humidity</span>
             </div>
           </div>
           <div class="hero-metric" v-tooltip.top="'CO₂ sensor'">
             <i class="pi pi-globe hero-metric-icon"></i>
             <div class="hero-metric-info">
-              <span class="hero-metric-value">
+              <span v-if="state.liveTelemetry.connected.value" class="hero-metric-value">
                 {{ state.co2Ppm.value.toFixed(0) }}<span class="hero-metric-unit">ppm</span>
               </span>
+              <span v-else class="hero-metric-value hero-metric-value--offline">—</span>
               <span class="hero-metric-label">CO₂</span>
             </div>
           </div>
           <div class="hero-metric" v-tooltip.top="'EC sensor'">
             <i class="pi pi-bolt hero-metric-icon"></i>
             <div class="hero-metric-info">
-              <span class="hero-metric-value">
+              <span v-if="state.liveTelemetry.connected.value" class="hero-metric-value">
                 {{ state.ecMs.value.toFixed(0) }}<span class="hero-metric-unit">µS/cm</span>
               </span>
+              <span v-else class="hero-metric-value hero-metric-value--offline">—</span>
               <span class="hero-metric-label">Water EC</span>
             </div>
           </div>
           <div class="hero-metric" v-tooltip.top="'pH sensor'">
             <i class="pi pi-chart-line hero-metric-icon"></i>
             <div class="hero-metric-info">
-              <span class="hero-metric-value">
+              <span v-if="state.liveTelemetry.connected.value" class="hero-metric-value">
                 {{ state.phValue.value.toFixed(1) }}<span class="hero-metric-unit">pH</span>
               </span>
+              <span v-else class="hero-metric-value hero-metric-value--offline">—</span>
               <span class="hero-metric-label">Water pH</span>
             </div>
           </div>
@@ -366,6 +371,11 @@ const setupRows = computed(() => {
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tracking-tight);
+}
+
+.hero-metric-value--offline {
+  color: var(--color-text-muted);
+  font-weight: 400;
 }
 
 .hero-metric-unit {

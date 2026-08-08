@@ -51,7 +51,7 @@ function onRemove(nutrient: Nutrient) {
       <template #body="slotProps">
         <div class="row-actions">
           <Button
-            icon="pi pi-pencil"
+            :icon="busyId === slotProps.data.id ? 'pi pi-spin pi-spinner' : 'pi pi-pencil'"
             severity="secondary"
             text
             rounded
@@ -61,7 +61,7 @@ function onRemove(nutrient: Nutrient) {
             @click="onEdit(slotProps.data)"
           />
           <Button
-            icon="pi pi-trash"
+            :icon="busyId === slotProps.data.id ? 'pi pi-spin pi-spinner' : 'pi pi-trash'"
             severity="danger"
             text
             rounded

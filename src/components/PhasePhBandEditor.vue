@@ -81,6 +81,7 @@ onBeforeUnmount(() => {
         <i class="pi pi-info-circle" />
         <span>These pH bands apply to both DAY and NIGHT periods for this phase.</span>
       </div>
+      <span v-if="saving" class="saving-hint"> <i class="pi pi-spin pi-spinner" /> Saving… </span>
       <div class="ph-row">
         <div class="field">
           <label class="field-label" for="phase-ph-min">Min</label>
@@ -163,6 +164,14 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.saving-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }

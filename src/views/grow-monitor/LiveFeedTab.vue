@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
+import Message from 'primevue/message'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
@@ -34,12 +35,23 @@ const formVisible = ref(false)
 const editingCamera = ref<Camera | null>(null)
 const galleryVisible = ref(false)
 const galleryCamera = ref<Camera | null>(null)
+const cameraError = ref<string | null>(null)
 
 const dialogHeader = computed(() => 'Live Feed')
 
 onMounted(() => {
-  void store.fetchCameras()
+  void loadCameras()
 })
+
+async function loadCameras() {
+  cameraError.value = null
+  try {
+    await store.fetchCameras()
+  } catch (err) {
+    const { message } = extractApiError(err, 'Failed to load cameras')
+    cameraError.value = message
+  }
+}
 
 function openAddForm() {
   editingCamera.value = null
@@ -96,6 +108,16 @@ async function doDelete(id: string) {
 
     <Card v-if="growCameras.length === 0" data-testid="camera-empty">
       <template #content>
+        <Message
+          v-if="cameraError"
+          severity="error"
+          :closable="false"
+          class="camera-error"
+          data-testid="camera-error"
+        >
+          {{ cameraError }}
+          <Button label="Retry" severity="secondary" size="small" text @click="loadCameras" />
+        </Message>
         <div class="empty-state">
           <i class="pi pi-video" />
           <p>No cameras for this grow yet.</p>
@@ -168,6 +190,10 @@ async function doDelete(id: string) {
   text-align: center;
   background: var(--color-bg-elevated);
   gap: var(--space-2);
+}
+
+.camera-error {
+  margin-bottom: var(--space-3);
 }
 
 .empty-state i {

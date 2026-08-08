@@ -153,7 +153,7 @@ async function deleteGrowCycle(id: string, name: string) {
         </DataTable>
 
         <div v-else class="empty-state">
-          <span class="pi pi-server empty-icon"></span>
+          <span class="pi pi-server empty-icon" aria-hidden="true"></span>
           <p>
             No controllers registered yet. Click <strong>Scan for Controllers</strong> to claim a
             new Pi over the LAN, or <strong>New Controller</strong> to add one by hand.

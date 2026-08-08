@@ -30,7 +30,7 @@ describe('DosingCalculatorDialog', () => {
     })
 
     await wrapper.get('[data-testid="reservoir-liters"]').setValue('10')
-    await wrapper.get('[data-testid="calculate-dosing"]').trigger('click')
+    await wrapper.get('form').trigger('submit')
 
     expect(apiStore.dosing.preview).toHaveBeenCalledWith('test-phase', {
       reservoirLiters: 10,
@@ -66,7 +66,7 @@ describe('DosingCalculatorDialog', () => {
       global: { stubs: primeVueStubs },
       props: { growPhaseId: 'test-phase', modelValue: true },
     })
-    await wrapper.get('[data-testid="calculate-dosing"]').trigger('click')
+    await wrapper.get('form').trigger('submit')
 
     const resultsText = wrapper.get('[data-testid="dosing-results"]').text()
     expect(resultsText).toMatch(/phase/i)
