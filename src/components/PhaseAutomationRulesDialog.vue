@@ -89,10 +89,10 @@ function isPinned(rule: AutomationRule): boolean {
 
 function pinnedLabel(rule: AutomationRule): string {
   if (rule.condition === RuleCondition.ALWAYS_ON) {
-    return '📌 Pinned ON'
+    return 'Pinned ON'
   }
   if (rule.condition === RuleCondition.ALWAYS_OFF) {
-    return '📌 Pinned OFF'
+    return 'Pinned OFF'
   }
   return rule.condition
 }
@@ -128,9 +128,6 @@ function ruleBoundaryWarning(rule: AutomationRule): string | null {
   }
   if (missing.length === 0) {
     return null
-  }
-  if (missing.length === periodsToCheck.length) {
-    return `Boundary field unset for ${missing.join(' & ')}`
   }
   return `Boundary field unset for ${missing.join(' & ')}`
 }
@@ -362,6 +359,7 @@ function close() {
                 <Tag
                   v-if="isPinned(slot.data)"
                   :value="pinnedLabel(slot.data)"
+                  icon="pi pi-thumbtack"
                   severity="info"
                   rounded
                 />

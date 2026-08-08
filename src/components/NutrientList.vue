@@ -32,11 +32,7 @@ function onRemove(nutrient: Nutrient) {
     size="small"
     class="nutrient-table"
   >
-    <Column field="name" header="Name" sortable style="font-weight: 600">
-      <template #body="slotProps">
-        <span>{{ slotProps.data.name }}</span>
-      </template>
-    </Column>
+    <Column field="name" header="Name" sortable style="font-weight: 600" />
     <Column field="brand" header="Brand" sortable>
       <template #body="slotProps">
         <span v-if="slotProps.data.brand">{{ slotProps.data.brand }}</span>

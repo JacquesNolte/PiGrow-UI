@@ -983,7 +983,7 @@ async function handleSave() {
         <div v-if="deviceForm.type === DeviceType.LIGHT" class="light-info">
           <i class="pi pi-info-circle light-info__icon" />
           <div class="light-info__body">
-            <strong>💡 Light scheduling is automatic.</strong>
+            <strong><i class="pi pi-lightbulb" /> Light scheduling is automatic.</strong>
             Configure the photoperiod on this device's active grow phase (<code
               >dayStartMinutes</code
             >
