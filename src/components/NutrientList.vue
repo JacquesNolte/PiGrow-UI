@@ -98,11 +98,6 @@ function onRemove(nutrient: Nutrient) {
   color: var(--color-text-secondary);
 }
 
-.nutrient-notes-tag {
-  margin-left: var(--space-2);
-  font-size: var(--text-xs);
-}
-
 .row-actions {
   display: flex;
   gap: var(--space-1);

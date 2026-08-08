@@ -431,12 +431,6 @@ export interface UpdateCameraPayload {
   snapshotIntervalMinutes?: number | null
 }
 
-export interface UICommand {
-  deviceId: string
-  action: 'ON' | 'OFF'
-  pin: number
-}
-
 export interface TelemetryFilterParams {
   from: string
   to: string

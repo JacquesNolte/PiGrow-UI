@@ -414,10 +414,6 @@ export function useAutomationMonitor(input: AutomationMonitorInput): AutomationM
   }) as unknown as AutomationMonitor
 }
 
-export function isPinAutomationMode(mode: AutomationMode): boolean {
-  return mode === AutomationMode.ALWAYS_ON || mode === AutomationMode.ALWAYS_OFF
-}
-
 export function actionLabel(action: DeviceAction): string {
   return action === DeviceAction.ON ? 'ON' : 'OFF'
 }

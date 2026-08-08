@@ -101,10 +101,6 @@ const BOUNDARY_DEFS: BoundaryDef[] = [
   },
 ]
 
-export function getBoundaryDefs(): BoundaryDef[] {
-  return BOUNDARY_DEFS
-}
-
 function isSet(value: number | null | undefined): boolean {
   return typeof value === 'number' && Number.isFinite(value)
 }
