@@ -438,6 +438,14 @@ watch(cycleId, () => void load(), { immediate: true })
   padding-left: var(--space-5);
 }
 
+.note-body--html :deep(li) {
+  margin: var(--space-1) 0;
+}
+
+.note-body--html :deep(li > p) {
+  margin: 0;
+}
+
 .note-body--html :deep(a) {
   color: var(--color-accent);
   text-decoration: underline;

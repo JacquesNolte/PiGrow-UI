@@ -245,33 +245,36 @@ defineExpose({ openCreate, openEdit })
         <div class="gn-toolbar" data-testid="gn-toolbar">
           <button
             type="button"
-            class="gn-btn"
+            class="gn-btn gn-btn-text"
             :class="{ active: isActive('bold') }"
             :disabled="!editor"
             title="Bold"
+            data-testid="gn-bold"
             @click="toolbar('bold')"
           >
-            <i class="pi pi-bold" />
+            B
           </button>
           <button
             type="button"
-            class="gn-btn"
+            class="gn-btn gn-btn-text gn-btn-italic"
             :class="{ active: isActive('italic') }"
             :disabled="!editor"
             title="Italic"
+            data-testid="gn-italic"
             @click="toolbar('italic')"
           >
-            <i class="pi pi-italic" />
+            I
           </button>
           <button
             type="button"
-            class="gn-btn"
+            class="gn-btn gn-btn-text gn-btn-underline"
             :class="{ active: isActive('underline') }"
             :disabled="!editor"
             title="Underline"
+            data-testid="gn-underline"
             @click="toolbar('underline')"
           >
-            <i class="pi pi-underline" />
+            U
           </button>
           <span class="gn-sep" />
           <button
@@ -307,23 +310,25 @@ defineExpose({ openCreate, openEdit })
           </button>
           <button
             type="button"
-            class="gn-btn"
+            class="gn-btn gn-btn-text"
             :class="{ active: isActive('ordered') }"
             :disabled="!editor"
             title="Ordered list"
+            data-testid="gn-ordered"
             @click="toolbar('ordered')"
           >
-            <i class="pi pi-list-ol" />
+            1.
           </button>
           <button
             type="button"
-            class="gn-btn"
+            class="gn-btn gn-btn-text gn-btn-quote"
             :class="{ active: isActive('quote') }"
             :disabled="!editor"
             title="Blockquote"
+            data-testid="gn-quote"
             @click="toolbar('quote')"
           >
-            <i class="pi pi-quote-right" />
+            ❝
           </button>
           <button
             type="button"
@@ -510,6 +515,19 @@ defineExpose({ openCreate, openEdit })
   border-color: var(--color-accent-border);
 }
 
+.gn-btn-italic {
+  font-style: italic;
+}
+
+.gn-btn-underline {
+  text-decoration: underline;
+}
+
+.gn-btn-quote {
+  font-size: var(--text-base);
+  line-height: 1;
+}
+
 .gn-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -532,29 +550,160 @@ defineExpose({ openCreate, openEdit })
   color: var(--color-text-muted);
 }
 
+/* TipTap is headless — it ships no CSS. Style the ProseMirror contenteditable
+   surface (`.gn-editor-prose`, applied via editorProps.attributes.class) so
+   tables, lists, headings, blockquotes, and code render correctly while
+   editing. Single :deep() per selector — nested :deep() is invalid and
+   silently fails to apply. */
 .gn-editor-wrap :deep(.gn-editor-prose) {
   padding: var(--space-3);
   min-height: 160px;
   outline: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  line-height: 1.6;
 }
 
-.gn-editor-wrap :deep(.gn-editor-prose):focus {
+.gn-editor-wrap :deep(.gn-editor-prose:focus) {
   outline: none;
 }
 
-.gn-editor-wrap :deep(.gn-editor-prose) :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
+.gn-editor-wrap :deep(.gn-editor-prose h1) {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: var(--space-3) 0 var(--space-2);
 }
 
-.gn-editor-wrap :deep(.gn-editor-prose) :deep(th),
-.gn-editor-wrap :deep(.gn-editor-prose) :deep(td) {
+.gn-editor-wrap :deep(.gn-editor-prose h2) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose h3) {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose p) {
+  margin: var(--space-1) 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose ul),
+.gn-editor-wrap :deep(.gn-editor-prose ol) {
+  margin: var(--space-2) 0;
+  padding-left: var(--space-5);
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose ul) {
+  list-style: disc;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose ol) {
+  list-style: decimal;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose li) {
+  margin: var(--space-1) 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose li > p) {
+  margin: 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose blockquote) {
+  margin: var(--space-2) 0;
+  padding: var(--space-1) var(--space-3);
+  border-left: 3px solid var(--color-border-active);
+  background: var(--color-bg-surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose blockquote p) {
+  margin: 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose code) {
+  background: var(--color-code-bg);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose pre) {
+  background: var(--color-code-bg);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: var(--space-2) 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose a) {
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose hr) {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-3) 0;
+}
+
+/* Tables — borders, padding, header emphasis, and the selected-cell/node
+   outline TipTap uses when a table/cell is focused. */
+.gn-editor-wrap :deep(.gn-editor-prose table) {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: var(--space-2) 0;
+  overflow: hidden;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose th),
+.gn-editor-wrap :deep(.gn-editor-prose td) {
   border: 1px solid var(--color-border);
   padding: var(--space-1) var(--space-2);
+  vertical-align: top;
+  text-align: left;
+  position: relative;
+  min-width: 60px;
 }
 
-.gn-editor-wrap :deep(.gn-editor-prose) :deep(th) {
+.gn-editor-wrap :deep(.gn-editor-prose th) {
   background: var(--color-bg-surface);
   font-weight: 600;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose .selectedCell) {
+  background: var(--color-accent-bg);
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose .ProseMirror-selectednode) {
+  outline: 2px solid var(--color-accent);
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose .column-resize-handle) {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-accent);
+  opacity: 0;
+  cursor: col-resize;
+}
+
+.gn-editor-wrap :deep(.gn-editor-prose .tableWrapper) {
+  overflow-x: auto;
 }
 </style>
