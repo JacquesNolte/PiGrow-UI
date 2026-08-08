@@ -184,7 +184,6 @@ onMounted(async () => {
       recalculateDates()
     }
   } catch (error) {
-    console.error('Failed to load form data', error)
   } finally {
     captureSnapshot()
     ready.value = true

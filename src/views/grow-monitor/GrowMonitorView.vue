@@ -325,9 +325,7 @@ onMounted(async () => {
 
   try {
     await reconcileGrowState(cycle)
-  } catch (error) {
-    console.error('[grow-monitor] Phase reconciliation failed:', error)
-  }
+  } catch (error) {}
   await state.loadActivePhaseEnv()
   await state.automations.reload()
 

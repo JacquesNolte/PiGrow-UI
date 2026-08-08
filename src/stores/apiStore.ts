@@ -58,7 +58,6 @@ export const useApiStore = defineStore('api', () => {
     try {
       await Promise.all([controllerStore.fetchAll(), growCycleStore.fetchAll()])
     } catch (error) {
-      console.error('Failed to sync state from backend', error)
     } finally {
       loading.value = false
     }
