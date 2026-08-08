@@ -113,7 +113,7 @@ export const useApiStore = defineStore('api', () => {
     fetchGrowCycle: growCycleStore.fetchGrowCycle,
     fetchLatestTelemetry: telemetryStore.fetchLatestTelemetry,
     fetchNutrients,
-    fetchCameras: cameraStore.list,
+    fetchCameras: cameraStore.fetchCameras,
     fetchSnapshots: cameraStore.fetchSnapshots,
     fetchPhaseEnvironment: growPhaseStore.fetchPhaseEnvironment,
     fetchPhases: growPhaseStore.fetchPhases,

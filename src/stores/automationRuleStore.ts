@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { ref } from 'vue'
 import axios from 'axios'
 import type {
   AutomationRule,
@@ -8,38 +9,74 @@ import type {
 import { API_BASE } from './apiBase'
 
 export const useAutomationRuleStore = defineStore('automationRule', () => {
+  const loading = ref(false)
   async function fetchRulesByPhase(growPhaseId: string) {
-    const res = await axios.get(`${API_BASE}/automation-rules/grow-phase/${growPhaseId}`)
-    return res.data as AutomationRule[]
+    loading.value = true
+    try {
+      const res = await axios.get(`${API_BASE}/automation-rules/grow-phase/${growPhaseId}`)
+      return res.data as AutomationRule[]
+    } finally {
+      loading.value = false
+    }
   }
 
   async function fetchRulesByCycle(growCycleId: string) {
-    const res = await axios.get(`${API_BASE}/automation-rules/grow-cycle/${growCycleId}`)
-    return res.data as AutomationRule[]
+    loading.value = true
+    try {
+      const res = await axios.get(`${API_BASE}/automation-rules/grow-cycle/${growCycleId}`)
+      return res.data as AutomationRule[]
+    } finally {
+      loading.value = false
+    }
   }
 
   async function fetchRulesByDevice(deviceId: string) {
-    const res = await axios.get(`${API_BASE}/automation-rules/device/${deviceId}`)
-    return res.data as AutomationRule[]
+    loading.value = true
+    try {
+      const res = await axios.get(`${API_BASE}/automation-rules/device/${deviceId}`)
+      return res.data as AutomationRule[]
+    } finally {
+      loading.value = false
+    }
   }
 
   async function createRule(payload: CreateAutomationRulePayload) {
-    const res = await axios.post(`${API_BASE}/automation-rules`, payload)
-    return res.data as AutomationRule
+    loading.value = true
+    try {
+      const res = await axios.post(`${API_BASE}/automation-rules`, payload)
+      return res.data as AutomationRule
+    } finally {
+      loading.value = false
+    }
   }
 
   async function updateRule(id: string, payload: UpdateAutomationRulePayload) {
-    const res = await axios.put(`${API_BASE}/automation-rules/${id}`, payload)
-    return res.data as AutomationRule
+    loading.value = true
+    try {
+      const res = await axios.put(`${API_BASE}/automation-rules/${id}`, payload)
+      return res.data as AutomationRule
+    } finally {
+      loading.value = false
+    }
   }
 
   async function toggleRule(id: string) {
-    const res = await axios.patch(`${API_BASE}/automation-rules/${id}/toggle`)
-    return res.data as AutomationRule
+    loading.value = true
+    try {
+      const res = await axios.patch(`${API_BASE}/automation-rules/${id}/toggle`)
+      return res.data as AutomationRule
+    } finally {
+      loading.value = false
+    }
   }
 
   async function deleteRule(id: string) {
-    await axios.delete(`${API_BASE}/automation-rules/${id}`)
+    loading.value = true
+    try {
+      await axios.delete(`${API_BASE}/automation-rules/${id}`)
+    } finally {
+      loading.value = false
+    }
   }
 
   return {
@@ -48,6 +85,7 @@ export const useAutomationRuleStore = defineStore('automationRule', () => {
     fetchRulesByCycle,
     fetchRulesByDevice,
     fetchRulesByPhase,
+    loading,
     toggleRule,
     updateRule,
   }

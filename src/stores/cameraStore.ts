@@ -8,6 +8,7 @@ import type {
   UpdateCameraPayload,
 } from '../types/grow'
 import { API_BASE } from './apiBase'
+import { extractApiError } from '../utils/errors'
 
 export class CameraConflictError extends Error {
   existingId: string | null
@@ -16,17 +17,6 @@ export class CameraConflictError extends Error {
     this.name = 'CameraConflictError'
     this.existingId = existingId
   }
-}
-
-function errorMessage(err: unknown, fallback: string): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { error?: string } | undefined
-    return data?.error ?? err.message ?? fallback
-  }
-  if (err instanceof Error) {
-    return err.message
-  }
-  return fallback
 }
 
 function toConflict(err: unknown): CameraConflictError | null {
@@ -65,7 +55,7 @@ export const useCameraStore = defineStore('camera', () => {
       if (newest) latestSnapshot.value[cameraId] = newest
       return data
     } catch (err) {
-      error.value = errorMessage(err, 'Failed to load snapshots')
+      error.value = extractApiError(err, 'Failed to load snapshots').message
       throw err
     } finally {
       loadingSnapshots.value = false
@@ -83,7 +73,7 @@ export const useCameraStore = defineStore('camera', () => {
         latestSnapshot.value[cameraId] = null
         return null
       }
-      error.value = errorMessage(err, 'Failed to load latest snapshot')
+      error.value = extractApiError(err, 'Failed to load latest snapshot').message
       throw err
     }
   }
@@ -94,7 +84,7 @@ export const useCameraStore = defineStore('camera', () => {
     latestSnapshot.value[cameraId] = snap
   }
 
-  async function list(): Promise<Camera[]> {
+  async function fetchCameras(): Promise<Camera[]> {
     loading.value = true
     error.value = null
     try {
@@ -102,7 +92,7 @@ export const useCameraStore = defineStore('camera', () => {
       cameras.value = res.data as Camera[]
       return cameras.value
     } catch (err) {
-      error.value = errorMessage(err, 'Failed to load cameras')
+      error.value = extractApiError(err, 'Failed to load cameras').message
       throw err
     } finally {
       loading.value = false
@@ -125,7 +115,7 @@ export const useCameraStore = defineStore('camera', () => {
       const conflict = toConflict(err)
       error.value = conflict
         ? 'Stream name already in use'
-        : errorMessage(err, 'Failed to create camera')
+        : extractApiError(err, 'Failed to create camera').message
       throw conflict ?? err
     }
   }
@@ -144,7 +134,7 @@ export const useCameraStore = defineStore('camera', () => {
       const conflict = toConflict(err)
       error.value = conflict
         ? 'Stream name already in use'
-        : errorMessage(err, 'Failed to update camera')
+        : extractApiError(err, 'Failed to update camera').message
       throw conflict ?? err
     }
   }
@@ -155,7 +145,7 @@ export const useCameraStore = defineStore('camera', () => {
       await axios.delete(`${API_BASE}/cameras/${id}`)
       cameras.value = cameras.value.filter((c) => c.id !== id)
     } catch (err) {
-      error.value = errorMessage(err, 'Failed to delete camera')
+      error.value = extractApiError(err, 'Failed to delete camera').message
       throw err
     }
   }
@@ -166,8 +156,8 @@ export const useCameraStore = defineStore('camera', () => {
     error,
     fetchLatestSnapshot,
     fetchSnapshots,
+    fetchCameras,
     latestSnapshot,
-    list,
     loading,
     loadingSnapshots,
     prependSnapshot,
