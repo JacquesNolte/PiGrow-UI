@@ -444,44 +444,46 @@ onUnmounted(() => {
     </Card>
 
     <Tabs v-model:value="activeTab" lazy class="monitor-tabs">
-      <TabList>
-        <Tab value="overview">
-          <i class="pi pi-th-large" />
-          <span>Overview</span>
-        </Tab>
-        <Tab value="history">
-          <i class="pi pi-chart-line" />
-          <span>History</span>
-        </Tab>
-        <Tab value="plan">
-          <i class="pi pi-sitemap" />
-          <span>Plan</span>
-          <Button
-            v-if="activePhaseIndex >= 0"
-            icon="pi pi-ellipsis-v"
-            text
-            rounded
-            severity="secondary"
-            size="small"
-            class="phase-menu-trigger"
-            aria-label="Phase options"
-            :disabled="skipping || ending"
-            @click.stop="togglePhaseMenu"
-          />
-        </Tab>
-        <Tab value="nutrients">
-          <i class="pi pi-flask" />
-          <span>Nutrients</span>
-        </Tab>
-        <Tab value="live-feed">
-          <i class="pi pi-video" />
-          <span>Live Feed</span>
-        </Tab>
-        <Tab value="notes">
-          <i class="pi pi-bookmark" />
-          <span>Notes</span>
-        </Tab>
-      </TabList>
+      <div class="monitor-tabs-header">
+        <TabList>
+          <Tab value="overview">
+            <i class="pi pi-th-large" />
+            <span>Overview</span>
+          </Tab>
+          <Tab value="history">
+            <i class="pi pi-chart-line" />
+            <span>History</span>
+          </Tab>
+          <Tab value="plan">
+            <i class="pi pi-sitemap" />
+            <span>Plan</span>
+          </Tab>
+          <Tab value="nutrients">
+            <i class="pi pi-flask" />
+            <span>Nutrients</span>
+          </Tab>
+          <Tab value="live-feed">
+            <i class="pi pi-video" />
+            <span>Live Feed</span>
+          </Tab>
+          <Tab value="notes">
+            <i class="pi pi-bookmark" />
+            <span>Notes</span>
+          </Tab>
+        </TabList>
+        <Button
+          v-if="activePhaseIndex >= 0"
+          icon="pi pi-ellipsis-v"
+          text
+          rounded
+          severity="secondary"
+          size="small"
+          class="phase-menu-trigger"
+          aria-label="Phase options"
+          :disabled="skipping || ending"
+          @click.stop="togglePhaseMenu"
+        />
+      </div>
       <Menu ref="phaseMenu" :model="phaseMenuItems" popup />
 
       <TabPanels>
@@ -703,7 +705,15 @@ onUnmounted(() => {
 
 /* Tabs */
 
+.monitor-tabs-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
 :deep(.monitor-tabs .p-tablist) {
+  flex: 1;
+  min-width: 0;
   border-bottom: 1px solid var(--color-border);
   margin-bottom: var(--space-4);
   overflow-x: auto;
@@ -740,7 +750,8 @@ onUnmounted(() => {
 }
 
 .phase-menu-trigger {
-  margin-left: var(--space-2);
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .not-found {
