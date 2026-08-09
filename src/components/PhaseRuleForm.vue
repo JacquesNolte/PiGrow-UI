@@ -5,6 +5,7 @@ import InputNumber from 'primevue/inputnumber'
 import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
+import DurationInput from './DurationInput.vue'
 import { DayNightPeriod, DeviceAction, DeviceType, RuleCondition, SensorType } from '../types/grow'
 import type {
   AutomationRule,
@@ -478,20 +479,12 @@ function onSubmit() {
       </div>
 
       <div v-if="isInterval" class="field">
-        <label class="field-label">Interval ON (seconds)</label>
-        <InputNumber
-          v-model.number="draft.intervalOnSeconds"
-          :min="1"
-          data-testid="interval-on"
-          show-buttons
-          class="full-width"
-        />
-        <label class="field-label">Interval cycle (seconds)</label>
-        <InputNumber
-          v-model.number="draft.intervalCycleSeconds"
-          :min="2"
-          data-testid="interval-cycle"
-          show-buttons
+        <label class="field-label">Interval ON (duration)</label>
+        <DurationInput v-model="draft.intervalOnSeconds" test-id="interval-on" class="full-width" />
+        <label class="field-label">Interval cycle (duration)</label>
+        <DurationInput
+          v-model="draft.intervalCycleSeconds"
+          test-id="interval-cycle"
           class="full-width"
         />
         <p v-if="intervalPreview" class="field-hint" data-testid="interval-preview">

@@ -152,4 +152,35 @@ describe('PhaseRuleForm INTERVAL anchor', () => {
     expect((w.vm as any).intervalPreview).toContain('at 07:00')
     expect((w.vm as any).intervalPreview).toContain('2d')
   })
+
+  it('duration composite decomposes the ON seconds into days/hours/min/sec', async () => {
+    const w = mount(PhaseRuleForm, {
+      global: { stubs: primeVueStubs },
+      props: props({
+        initialCondition: RuleCondition.INTERVAL,
+        mode: 'edit',
+        initialRule: {
+          id: 'r1',
+          action: DeviceAction.ON,
+          condition: RuleCondition.INTERVAL,
+          cooldownSeconds: 180,
+          deviceId: 'd1',
+          intervalAnchorMinutes: null,
+          intervalCycleSeconds: 172800, // 2d
+          intervalOnSeconds: 900, // 15m
+          period: null,
+          scheduleTimeMinutes: null,
+          watchedSensorType: null,
+        } as never,
+      }),
+    })
+    // ON composite: 0d 0h 15m 0s
+    expect((w.find('[data-testid="interval-on-minutes"]').element as HTMLInputElement).value).toBe(
+      '15',
+    )
+    // Cycle composite: 2d 0h 0m 0s
+    expect((w.find('[data-testid="interval-cycle-days"]').element as HTMLInputElement).value).toBe(
+      '2',
+    )
+  })
 })
