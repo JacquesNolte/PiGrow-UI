@@ -33,6 +33,7 @@ type FieldKey =
   | 'period'
   | 'intervalOnSeconds'
   | 'intervalCycleSeconds'
+  | 'intervalAnchorMinutes'
   | 'scheduleTimeMinutes'
 
 interface FieldError {
@@ -174,7 +175,8 @@ function matchServerError(message: string): FieldError | null {
     message.includes('intervalOnSeconds is required') ||
     message.includes('intervalCycleSeconds is required') ||
     message.includes('intervalCycleSeconds must be greater than') ||
-    message.includes('intervalOnSeconds and intervalCycleSeconds must be null for non-INTERVAL')
+    message.includes('must be null for non-INTERVAL') ||
+    message.includes('intervalAnchorMinutes must be null for SCHEDULE_ON / SCHEDULE_OFF')
   ) {
     return { field: 'condition', message }
   }

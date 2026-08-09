@@ -260,6 +260,7 @@ export interface AutomationRule {
   cooldownSeconds: number
   intervalOnSeconds: number | null
   intervalCycleSeconds: number | null
+  intervalAnchorMinutes: number | null
   scheduleTimeMinutes: number | null
   enabled: boolean
   lastTriggeredAt: string | null
@@ -278,6 +279,7 @@ export interface CreateAutomationRulePayload {
   cooldownSeconds?: number
   intervalOnSeconds?: number
   intervalCycleSeconds?: number
+  intervalAnchorMinutes?: number | null
   scheduleTimeMinutes?: number
   enabled?: boolean
 }
@@ -291,6 +293,7 @@ export interface UpdateAutomationRulePayload {
   cooldownSeconds?: number
   intervalOnSeconds?: number | null
   intervalCycleSeconds?: number | null
+  intervalAnchorMinutes?: number | null
   scheduleTimeMinutes?: number | null
   enabled?: boolean
 }

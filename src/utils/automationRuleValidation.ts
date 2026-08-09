@@ -16,6 +16,7 @@ export interface RuleDraft {
   cooldownSeconds: number
   intervalOnSeconds: number | null
   intervalCycleSeconds: number | null
+  intervalAnchorMinutes: number | null
   scheduleTimeMinutes: number | null
 }
 
@@ -54,6 +55,12 @@ export function validateRuleDraft(d: RuleDraft, devices: Device[]): string | nul
     if (d.intervalCycleSeconds <= d.intervalOnSeconds) {
       return 'intervalCycleSeconds must be greater than intervalOnSeconds'
     }
+    if (
+      d.intervalAnchorMinutes != null &&
+      (d.intervalAnchorMinutes < 0 || d.intervalAnchorMinutes > 1440)
+    ) {
+      return 'intervalAnchorMinutes must be between 0 and 1440 (minutes from midnight)'
+    }
     if (d.scheduleTimeMinutes != null) {
       return 'scheduleTimeMinutes must be null for INTERVAL rules'
     }
@@ -63,6 +70,9 @@ export function validateRuleDraft(d: RuleDraft, devices: Device[]): string | nul
     }
     if (d.intervalOnSeconds != null || d.intervalCycleSeconds != null) {
       return 'intervalOnSeconds and intervalCycleSeconds must be null for SCHEDULE_ON / SCHEDULE_OFF rules'
+    }
+    if (d.intervalAnchorMinutes != null) {
+      return 'intervalAnchorMinutes must be null for SCHEDULE_ON / SCHEDULE_OFF rules'
     }
     if (d.scheduleTimeMinutes == null) {
       return 'scheduleTimeMinutes is required for SCHEDULE_ON / SCHEDULE_OFF rules'
@@ -79,6 +89,9 @@ export function validateRuleDraft(d: RuleDraft, devices: Device[]): string | nul
   } else {
     if (d.intervalOnSeconds != null || d.intervalCycleSeconds != null) {
       return 'intervalOnSeconds and intervalCycleSeconds must be null for non-INTERVAL rules'
+    }
+    if (d.intervalAnchorMinutes != null) {
+      return 'intervalAnchorMinutes must be null for non-INTERVAL rules'
     }
     if (d.scheduleTimeMinutes != null) {
       return 'scheduleTimeMinutes is only valid for SCHEDULE_ON / SCHEDULE_OFF rules'
@@ -119,6 +132,7 @@ export function buildCreatePayload(d: RuleDraft, growPhaseId: string): CreateAut
   if (d.condition === RuleCondition.INTERVAL) {
     return {
       ...base,
+      intervalAnchorMinutes: d.intervalAnchorMinutes,
       intervalCycleSeconds: d.intervalCycleSeconds!,
       intervalOnSeconds: d.intervalOnSeconds!,
     }
@@ -144,14 +158,15 @@ export function buildUpdatePayload(d: RuleDraft): UpdateAutomationRulePayload {
   if (d.condition === RuleCondition.INTERVAL) {
     return {
       ...base,
+      intervalAnchorMinutes: d.intervalAnchorMinutes,
       intervalCycleSeconds: d.intervalCycleSeconds!,
       intervalOnSeconds: d.intervalOnSeconds!,
-      scheduleTimeMinutes: null,
     }
   }
   if (SCHEDULE.has(d.condition)) {
     return {
       ...base,
+      intervalAnchorMinutes: null,
       intervalCycleSeconds: null,
       intervalOnSeconds: null,
       scheduleTimeMinutes: d.scheduleTimeMinutes!,
@@ -159,6 +174,7 @@ export function buildUpdatePayload(d: RuleDraft): UpdateAutomationRulePayload {
   }
   return {
     ...base,
+    intervalAnchorMinutes: null,
     intervalCycleSeconds: null,
     intervalOnSeconds: null,
     scheduleTimeMinutes: null,

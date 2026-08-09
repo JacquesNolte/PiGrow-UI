@@ -15,6 +15,14 @@ export function fmtDuration(s: number): string {
   if (m >= 60) {
     const h = Math.floor(m / 60)
     const mm = m % 60
+    if (h >= 24) {
+      const d = Math.floor(h / 24)
+      const hh = h % 24
+      if (hh === 0 && mm === 0) return `${d}d`
+      if (hh === 0) return `${d}d ${mm}m`
+      if (mm === 0) return `${d}d ${hh}h`
+      return `${d}d ${hh}h ${mm}m`
+    }
     return mm === 0 ? `${h}h` : `${h}h ${mm}m`
   }
   return rem === 0 ? `${m}m` : `${m}m ${rem}s`
@@ -30,7 +38,13 @@ export function formatIntervalRule(rule: AutomationRule): string {
   if (on == null || cyc == null) {
     return 'Interval'
   }
-  return `ON ${fmtDuration(on)} every ${fmtDuration(cyc)} (OFF ${fmtDuration(cyc - on)})`
+  const base = `ON ${fmtDuration(on)} every ${fmtDuration(cyc)} (OFF ${fmtDuration(cyc - on)})`
+  const anchor = rule.intervalAnchorMinutes
+  if (anchor != null) {
+    // 1440 == midnight == 00:00 (next day); normalize so formatScheduleTime renders it.
+    return `${base} at ${formatScheduleTime(anchor % 1440)}`
+  }
+  return base
 }
 
 /**

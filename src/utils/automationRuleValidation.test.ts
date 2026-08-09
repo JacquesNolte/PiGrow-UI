@@ -24,6 +24,7 @@ const base = (over: Partial<RuleDraft> = {}): RuleDraft => ({
   condition: RuleCondition.ABOVE_MAX,
   cooldownSeconds: 60,
   deviceId: 'd1',
+  intervalAnchorMinutes: null,
   intervalCycleSeconds: null,
   intervalOnSeconds: null,
   period: null,
@@ -129,6 +130,58 @@ describe('validateRuleDraft INTERVAL', () => {
       ),
     ).toMatch(/watchedSensorType must be null for INTERVAL/)
   })
+  it('accepts a null anchor (createdAt-based duty cycle)', () => {
+    expect(
+      validateRuleDraft(
+        base({
+          condition: RuleCondition.INTERVAL,
+          intervalAnchorMinutes: null,
+          intervalCycleSeconds: 300,
+          intervalOnSeconds: 30,
+          watchedSensorType: null,
+        }),
+        [fan],
+      ),
+    ).toBeNull()
+  })
+  it('accepts a time-of-day anchor (watering schedule)', () => {
+    expect(
+      validateRuleDraft(
+        base({
+          condition: RuleCondition.INTERVAL,
+          intervalAnchorMinutes: 420,
+          intervalCycleSeconds: 172800,
+          intervalOnSeconds: 900,
+          watchedSensorType: null,
+        }),
+        [fan],
+      ),
+    ).toBeNull()
+  })
+  it('blocks anchor > 1440', () => {
+    expect(
+      validateRuleDraft(
+        base({
+          condition: RuleCondition.INTERVAL,
+          intervalAnchorMinutes: 1441,
+          intervalCycleSeconds: 300,
+          intervalOnSeconds: 30,
+          watchedSensorType: null,
+        }),
+        [fan],
+      ),
+    ).toMatch(/intervalAnchorMinutes must be between 0 and 1440/)
+  })
+  it('blocks anchor on a non-INTERVAL (threshold) rule', () => {
+    expect(
+      validateRuleDraft(
+        base({
+          intervalAnchorMinutes: 420,
+        }),
+        [fan],
+      ),
+    ).toMatch(/intervalAnchorMinutes must be null for non-INTERVAL/)
+  })
 })
 
 describe('buildCreatePayload', () => {
@@ -136,8 +189,9 @@ describe('buildCreatePayload', () => {
     const p = buildCreatePayload(
       base({
         condition: RuleCondition.INTERVAL,
-        intervalCycleSeconds: 300,
-        intervalOnSeconds: 30,
+        intervalAnchorMinutes: 420,
+        intervalCycleSeconds: 172800,
+        intervalOnSeconds: 900,
         watchedSensorType: null,
       }),
       'phase1',
@@ -145,8 +199,9 @@ describe('buildCreatePayload', () => {
     expect(p).toMatchObject({
       action: 'ON',
       condition: 'INTERVAL',
-      intervalCycleSeconds: 300,
-      intervalOnSeconds: 30,
+      intervalAnchorMinutes: 420,
+      intervalCycleSeconds: 172800,
+      intervalOnSeconds: 900,
       watchedSensorType: null,
     })
   })
@@ -162,17 +217,23 @@ describe('buildUpdatePayload', () => {
     const p = buildUpdatePayload(
       base({
         condition: RuleCondition.INTERVAL,
-        intervalCycleSeconds: 300,
-        intervalOnSeconds: 30,
+        intervalAnchorMinutes: 420,
+        intervalCycleSeconds: 172800,
+        intervalOnSeconds: 900,
         watchedSensorType: null,
       }),
     )
-    expect(p).toMatchObject({ intervalCycleSeconds: 300, intervalOnSeconds: 30 })
+    expect(p).toMatchObject({
+      intervalCycleSeconds: 172800,
+      intervalOnSeconds: 900,
+      intervalAnchorMinutes: 420,
+    })
   })
   it('sends explicit null for non-INTERVAL to clear stale values', () => {
     const p = buildUpdatePayload(base()) as Record<string, unknown>
     expect(p.intervalOnSeconds).toBeNull()
     expect(p.intervalCycleSeconds).toBeNull()
+    expect(p.intervalAnchorMinutes).toBeNull()
     expect(p.scheduleTimeMinutes).toBeNull()
   })
 })

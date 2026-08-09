@@ -2,6 +2,7 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
+import InputSwitch from 'primevue/inputswitch'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import { DayNightPeriod, DeviceAction, DeviceType, RuleCondition, SensorType } from '../types/grow'
@@ -17,6 +18,7 @@ import {
   buildUpdatePayload,
   validateRuleDraft,
 } from '../utils/automationRuleValidation'
+import { fmtDuration, formatScheduleTime } from '../utils/automationRuleDisplay'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -45,6 +47,7 @@ type FieldKey =
   | 'period'
   | 'intervalOnSeconds'
   | 'intervalCycleSeconds'
+  | 'intervalAnchorMinutes'
   | 'scheduleTimeMinutes'
 // FieldKey is also referenced (by string-literal contract) in
 // PhaseAutomationRulesDialog.vue. Keep the union values in sync there.
@@ -58,6 +61,7 @@ interface Draft {
   cooldownSeconds: number
   intervalOnSeconds: number | null
   intervalCycleSeconds: number | null
+  intervalAnchorMinutes: number | null
   scheduleTimeMinutes: number | null
 }
 
@@ -219,8 +223,39 @@ const intervalPreview = computed(() => {
   if (on == null || cyc == null) {
     return null
   }
-  const off = cyc - on
-  return `ON ${on}s, then OFF ${off}s, repeating every ${cyc}s`
+  const anchor = draft.value.intervalAnchorMinutes
+  const anchorStr = anchor != null ? ` at ${formatScheduleTime(anchor % 1440)}` : ''
+  return `ON ${fmtDuration(on)}, then OFF ${fmtDuration(cyc - on)}, repeating every ${fmtDuration(cyc)}${anchorStr}`
+})
+
+// Anchor (time-of-day) picker for INTERVAL rules. When enabled, pulses align
+// to a wall-clock time instead of rule-creation time — e.g. a 2-day cycle
+// anchored at 07:00 fires at 07:00 every other day.
+const useAnchor = computed<boolean>({
+  get: () => draft.value.intervalAnchorMinutes != null,
+  set: (v) => {
+    draft.value.intervalAnchorMinutes = v ? 420 : null
+  },
+})
+
+const anchorHour = computed<number>({
+  get: () =>
+    draft.value.intervalAnchorMinutes == null
+      ? 0
+      : Math.floor((draft.value.intervalAnchorMinutes % 1440) / 60),
+  set: (h) => {
+    const cur = draft.value.intervalAnchorMinutes ?? 0
+    draft.value.intervalAnchorMinutes = h * 60 + (cur % 60)
+  },
+})
+
+const anchorMinute = computed<number>({
+  get: () =>
+    draft.value.intervalAnchorMinutes == null ? 0 : (draft.value.intervalAnchorMinutes % 1440) % 60,
+  set: (m) => {
+    const cur = draft.value.intervalAnchorMinutes ?? 0
+    draft.value.intervalAnchorMinutes = Math.floor(cur / 60) * 60 + m
+  },
 })
 
 const HOUR_OPTIONS: { label: string; value: number }[] = Array.from({ length: 24 }, (_, h) => ({
@@ -275,6 +310,7 @@ function emptyDraft(): Draft {
     condition: cond,
     cooldownSeconds: 180,
     deviceId: props.devices.find((d) => d.isActive && d.type !== DeviceType.LIGHT)?.id ?? null,
+    intervalAnchorMinutes: null,
     intervalCycleSeconds: props.initialCondition === RuleCondition.INTERVAL ? 300 : null,
     intervalOnSeconds: props.initialCondition === RuleCondition.INTERVAL ? 30 : null,
     period: null,
@@ -301,6 +337,7 @@ function hydrate() {
       condition: props.initialRule.condition,
       cooldownSeconds: props.initialRule.cooldownSeconds,
       deviceId: props.initialRule.deviceId,
+      intervalAnchorMinutes: props.initialRule.intervalAnchorMinutes ?? null,
       intervalCycleSeconds: props.initialRule.intervalCycleSeconds,
       intervalOnSeconds: props.initialRule.intervalOnSeconds,
       period: props.initialRule.period,
@@ -325,6 +362,7 @@ watch(
     if (prev === RuleCondition.INTERVAL) {
       draft.value.intervalOnSeconds = null
       draft.value.intervalCycleSeconds = null
+      draft.value.intervalAnchorMinutes = null
     }
     if (prev === RuleCondition.SCHEDULE_ON || prev === RuleCondition.SCHEDULE_OFF) {
       draft.value.scheduleTimeMinutes = null
@@ -456,7 +494,35 @@ function onSubmit() {
           show-buttons
           class="full-width"
         />
-        <p v-if="intervalPreview" class="field-hint">{{ intervalPreview }}</p>
+        <p v-if="intervalPreview" class="field-hint" data-testid="interval-preview">
+          {{ intervalPreview }}
+        </p>
+        <div class="anchor-row">
+          <label class="field-label">
+            <InputSwitch v-model="useAnchor" data-testid="interval-anchor-toggle" />
+            Start at a time of day
+          </label>
+          <div v-if="useAnchor" class="time-picker">
+            <Select
+              v-model="anchorHour"
+              :options="HOUR_OPTIONS"
+              option-label="label"
+              option-value="value"
+              placeholder="HH"
+              data-testid="interval-anchor-hour"
+              class="anchor-select"
+            />
+            <Select
+              v-model="anchorMinute"
+              :options="MINUTE_OPTIONS"
+              option-label="label"
+              option-value="value"
+              placeholder="MM"
+              data-testid="interval-anchor-minute"
+              class="anchor-select"
+            />
+          </div>
+        </div>
       </div>
 
       <div v-else-if="isSchedule" class="field">
@@ -654,6 +720,23 @@ function onSubmit() {
 .time-picker-sep {
   font-weight: 600;
   color: var(--color-text-muted);
+}
+
+.anchor-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.anchor-row .field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.anchor-select {
+  width: 5rem;
 }
 
 .form-message {

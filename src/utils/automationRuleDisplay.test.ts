@@ -3,9 +3,10 @@ import { conditionShort, formatIntervalRule, formatScheduleTime } from './automa
 import { DeviceAction, RuleCondition, SensorType } from '../types/grow'
 import type { AutomationRule } from '../types/grow'
 
-const intervalRule = (on: number | null, cyc: number | null) =>
+const intervalRule = (on: number | null, cyc: number | null, anchor: number | null = null) =>
   ({
     condition: RuleCondition.INTERVAL,
+    intervalAnchorMinutes: anchor,
     intervalCycleSeconds: cyc,
     intervalOnSeconds: on,
   }) as AutomationRule
@@ -25,6 +26,19 @@ describe('formatIntervalRule', () => {
   })
   it('handles nulls', () => {
     expect(formatIntervalRule(intervalRule(null, null))).toBe('Interval')
+  })
+  it('appends anchor time-of-day when set', () => {
+    expect(formatIntervalRule(intervalRule(900, 172800, 420))).toBe(
+      'ON 15m every 2d (OFF 1d 23h 45m) at 07:00',
+    )
+  })
+  it('omits anchor when null (duty-cycle)', () => {
+    expect(formatIntervalRule(intervalRule(30, 300, null))).toBe('ON 30s every 5m (OFF 4m 30s)')
+  })
+  it('normalizes anchor 1440 to 00:00 (midnight)', () => {
+    expect(formatIntervalRule(intervalRule(60, 3600, 1440))).toBe(
+      'ON 1m every 1h (OFF 59m) at 00:00',
+    )
   })
 })
 

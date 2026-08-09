@@ -89,3 +89,67 @@ describe('PhaseRuleForm SCHEDULE branch', () => {
     expect((w.vm as any).draft.scheduleTimeMinutes).toBeNull()
   })
 })
+
+describe('PhaseRuleForm INTERVAL anchor', () => {
+  it('enabling the anchor toggle sets a default anchor of 07:00 (420)', async () => {
+    const w = mount(PhaseRuleForm, {
+      global: { stubs: primeVueStubs },
+      props: props({ initialCondition: RuleCondition.INTERVAL }),
+    })
+    expect((w.vm as any).draft.intervalAnchorMinutes).toBeNull()
+    ;(w.vm as any).useAnchor = true
+    await w.vm.$nextTick()
+    expect((w.vm as any).draft.intervalAnchorMinutes).toBe(420)
+  })
+
+  it('disabling the anchor toggle clears it to null', async () => {
+    const w = mount(PhaseRuleForm, {
+      global: { stubs: primeVueStubs },
+      props: props({ initialCondition: RuleCondition.INTERVAL }),
+    })
+    ;(w.vm as any).useAnchor = true
+    await w.vm.$nextTick()
+    ;(w.vm as any).useAnchor = false
+    await w.vm.$nextTick()
+    expect((w.vm as any).draft.intervalAnchorMinutes).toBeNull()
+  })
+
+  it('normalizes anchor=1440 to hour 0 in the picker (midnight, not 24)', async () => {
+    const w = mount(PhaseRuleForm, {
+      global: { stubs: primeVueStubs },
+      props: props({
+        initialCondition: RuleCondition.INTERVAL,
+        mode: 'edit',
+        initialRule: {
+          id: 'r1',
+          action: DeviceAction.ON,
+          condition: RuleCondition.INTERVAL,
+          cooldownSeconds: 180,
+          deviceId: 'd1',
+          intervalAnchorMinutes: 1440,
+          intervalCycleSeconds: 86400,
+          intervalOnSeconds: 900,
+          period: null,
+          scheduleTimeMinutes: null,
+          watchedSensorType: null,
+        } as never,
+      }),
+    })
+    // 1440 == midnight == 00:00; the hour picker (0..23) must see 0, not 24.
+    expect((w.vm as any).anchorHour).toBe(0)
+    expect((w.vm as any).anchorMinute).toBe(0)
+  })
+
+  it('shows a human-readable preview with the anchor time', async () => {
+    const w = mount(PhaseRuleForm, {
+      global: { stubs: primeVueStubs },
+      props: props({ initialCondition: RuleCondition.INTERVAL }),
+    })
+    ;(w.vm as any).draft.intervalOnSeconds = 900
+    ;(w.vm as any).draft.intervalCycleSeconds = 172800
+    ;(w.vm as any).draft.intervalAnchorMinutes = 420
+    await w.vm.$nextTick()
+    expect((w.vm as any).intervalPreview).toContain('at 07:00')
+    expect((w.vm as any).intervalPreview).toContain('2d')
+  })
+})
