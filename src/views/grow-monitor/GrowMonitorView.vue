@@ -35,6 +35,7 @@ const PlanTab = defineAsyncComponent(() => import('./PlanTab.vue'))
 const NutrientsTab = defineAsyncComponent(() => import('./NutrientsTab.vue'))
 const LiveFeedTab = defineAsyncComponent(() => import('./LiveFeedTab.vue'))
 const NotesTab = defineAsyncComponent(() => import('./NotesTab.vue'))
+const AiAdvisorTab = defineAsyncComponent(() => import('./AiAdvisorTab.vue'))
 
 const router = useRouter()
 const store = useApiStore()
@@ -64,9 +65,9 @@ const {
   totalDurationDays,
 } = state
 
-const activeTab = ref<'overview' | 'history' | 'plan' | 'nutrients' | 'live-feed' | 'notes'>(
-  'overview',
-)
+const activeTab = ref<
+  'overview' | 'history' | 'plan' | 'nutrients' | 'live-feed' | 'notes' | 'ai-advisor'
+>('overview')
 
 const phaseMenu = useTemplateRef<InstanceType<typeof Menu>>('phaseMenu')
 const showExtendDialog = ref(false)
@@ -470,6 +471,10 @@ onUnmounted(() => {
             <i class="pi pi-bookmark" />
             <span>Notes</span>
           </Tab>
+          <Tab value="ai-advisor">
+            <i class="pi pi-sparkles" />
+            <span>AI</span>
+          </Tab>
         </TabList>
         <Button
           v-if="activePhaseIndex >= 0"
@@ -504,6 +509,9 @@ onUnmounted(() => {
         </TabPanel>
         <TabPanel value="notes">
           <NotesTab />
+        </TabPanel>
+        <TabPanel value="ai-advisor">
+          <AiAdvisorTab />
         </TabPanel>
       </TabPanels>
     </Tabs>

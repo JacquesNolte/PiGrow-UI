@@ -12,6 +12,7 @@ import { useDosingLogStore } from './dosingLogStore'
 import { useCameraStore } from './cameraStore'
 import { useGrowCycleNoteStore } from './growCycleNoteStore'
 import { useHarvestLogStore } from './harvestLogStore'
+import { useAiStore } from './aiStore'
 import axios from 'axios'
 import { API_BASE } from './apiBase'
 import type { DosingWarningCode } from '../types/grow'
@@ -42,6 +43,7 @@ export const useApiStore = defineStore('api', () => {
   const cameraStore = useCameraStore()
   const growCycleNoteStore = useGrowCycleNoteStore()
   const harvestLogStore = useHarvestLogStore()
+  const aiStore = useAiStore()
 
   async function previewDosing(growPhaseId: string, payload: DosingPreviewPayload) {
     const res = await axios.post(`${API_BASE}/grow-phases/${growPhaseId}/dosing/preview`, payload)
@@ -71,6 +73,10 @@ export const useApiStore = defineStore('api', () => {
 
   return {
     activateGrowPhase: growPhaseStore.activateGrowPhase,
+    ai: {
+      analyze: aiStore.analyze,
+      fetchExport: aiStore.fetchExport,
+    },
     claimController: controllerStore.claimController,
     cameras,
     controllers,

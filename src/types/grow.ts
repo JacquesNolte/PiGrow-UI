@@ -489,6 +489,89 @@ export interface UpsertHarvestLogPayload {
   whatToImprove?: string | null
 }
 
+export interface AdvisorIssue {
+  severity: 'info' | 'warning' | 'critical'
+  category: 'environment' | 'feeding' | 'equipment' | 'other'
+  description: string
+  suggestedAdjustment: string
+  confidence: 'low' | 'medium' | 'high'
+  rationale: string
+}
+
+export interface EnvironmentalSuggestion {
+  target: string
+  currentValue: number | null
+  suggestedValue: number
+  unit: string
+  phase: string
+  rationale: string
+}
+
+export interface FeedingSuggestion {
+  target: string
+  currentValue: number | null
+  suggestedValue: number
+  unit: string
+  rationale: string
+}
+
+export interface AdvisorResponse {
+  healthSummary: string
+  issues: AdvisorIssue[]
+  environmentalSuggestions: EnvironmentalSuggestion[]
+  feedingSuggestions: FeedingSuggestion[]
+  prioritizedActions: string[]
+}
+
+export interface GrowExportBundle {
+  cycle: {
+    id: string
+    name: string
+    isActive: boolean
+    startAt: string | null
+    endAt: string | null
+    metadata: Record<string, unknown>
+  }
+  phases: Array<{
+    id: string
+    name: string
+    startAt: string | null
+    endAt: string | null
+    dayEnv: unknown | null
+    nightEnv: unknown | null
+    phBand: { min: number | null; max: number | null; target: number | null }
+  }>
+  telemetrySummary: {
+    from: string
+    to: string
+    bucketMinutes: number
+    series: Array<{
+      sensorId: string
+      sensorType: string
+      unit: string
+      buckets: Array<{ at: string; min: number; max: number; avg: number }>
+    }>
+  }
+  deviceEvents: Array<{
+    deviceId: string
+    deviceName: string
+    deviceType: string
+    onTransitions: number
+    totalOnMinutes: number
+  }>
+  dosingEvents: Array<{
+    at: string
+    nutrientName: string
+    amountMl: number
+    phAfter: number | null
+    ecAfter: number | null
+  }>
+  notes: Array<{ at: string; title: string | null; note: string; phaseId: string | null }>
+  harvestLog: unknown
+  alerts: unknown[]
+  vision: unknown[]
+}
+
 // TODO: when a device history view is built, render `reason` tolerating new
 // AUTO reason strings: "day cycle start (phase <id>)", "night cycle start
 // (phase <id>)", "ALWAYS_ON rule (<id>)", "ALWAYS_OFF rule (<id>)" (alongside
