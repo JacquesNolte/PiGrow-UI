@@ -489,6 +489,18 @@ export interface UpsertHarvestLogPayload {
   whatToImprove?: string | null
 }
 
+export interface GrowAlert {
+  id: string
+  growCycleId: string
+  severity: string
+  category: string
+  sensorType: string | null
+  message: string
+  detectedAt: string
+  resolvedAt: string | null
+  telemetrySnapshot: unknown | null
+}
+
 export interface AdvisorIssue {
   severity: 'info' | 'warning' | 'critical'
   category: 'environment' | 'feeding' | 'equipment' | 'other'

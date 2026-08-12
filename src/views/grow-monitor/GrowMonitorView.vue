@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useApiStore } from '../../stores/apiStore'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
-import type { GrowPhase } from '../../types/grow'
+import type { GrowAlert, GrowPhase } from '../../types/grow'
 import {
   useGrowMonitorState,
   provideGrowMonitorState,
@@ -29,6 +29,7 @@ import TabPanel from 'primevue/tabpanel'
 import ConfirmDialog from 'primevue/confirmdialog'
 import OverviewTab from './OverviewTab.vue'
 import ExtendPhaseDialog from './ExtendPhaseDialog.vue'
+import AlertsPanel from './AlertsPanel.vue'
 
 const HistoryTab = defineAsyncComponent(() => import('./HistoryTab.vue'))
 const PlanTab = defineAsyncComponent(() => import('./PlanTab.vue'))
@@ -71,6 +72,27 @@ const activeTab = ref<
 
 const phaseMenu = useTemplateRef<InstanceType<typeof Menu>>('phaseMenu')
 const showExtendDialog = ref(false)
+
+const alertsVisible = ref(false)
+const unresolvedAlerts = ref<GrowAlert[]>([])
+const unresolvedCount = computed(() => unresolvedAlerts.value.length)
+const badgeSeverity = computed<'danger' | 'warn' | 'info'>(() => {
+  const severities = new Set(unresolvedAlerts.value.map((a) => a.severity))
+  if (severities.has('critical')) return 'danger'
+  if (severities.has('warning')) return 'warn'
+  return 'info'
+})
+
+async function loadAlerts() {
+  if (!cycleId.value) {
+    return
+  }
+  try {
+    unresolvedAlerts.value = await store.alerts.list(cycleId.value, false)
+  } catch {
+    // Non-critical polling error — badge is informational; swallow per convention.
+  }
+}
 
 function togglePhaseMenu(event: Event) {
   phaseMenu.value?.toggle(event)
@@ -209,6 +231,7 @@ async function executeEndGrow() {
 let envTickHandle: ReturnType<typeof setInterval> | null = null
 let secondsTickHandle: ReturnType<typeof setInterval> | null = null
 let staleCheckHandle: ReturnType<typeof setInterval> | null = null
+let alertsPollHandle: ReturnType<typeof setInterval> | null = null
 
 async function reconcileGrowState(cycle: {
   id: string
@@ -329,6 +352,8 @@ onMounted(async () => {
   } catch (error) {}
   await state.loadActivePhaseEnv()
   await state.automations.reload()
+  await loadAlerts()
+  alertsPollHandle = setInterval(loadAlerts, 60_000)
 
   // Stale device state detection — poll devices if a state update is missed.
   const STALE_STATE_MS = 30_000
@@ -360,6 +385,10 @@ onUnmounted(() => {
   if (staleCheckHandle) {
     clearInterval(staleCheckHandle)
     staleCheckHandle = null
+  }
+  if (alertsPollHandle) {
+    clearInterval(alertsPollHandle)
+    alertsPollHandle = null
   }
   store.stopDevicePolling()
   state.liveTelemetry.stop()
@@ -438,6 +467,23 @@ onUnmounted(() => {
               <span>{{ elapsedDays }} / {{ totalDurationDays }} days</span>
               <span>est. {{ estimatedHarvestDate }}</span>
             </div>
+          </div>
+
+          <div class="hero-divider"></div>
+
+          <div class="hero-group hero-alerts">
+            <Button
+              v-if="unresolvedCount > 0"
+              :label="String(unresolvedCount)"
+              icon="pi pi-bell"
+              size="small"
+              rounded
+              text
+              :severity="badgeSeverity"
+              class="alerts-badge"
+              data-testid="alerts-badge"
+              @click="alertsVisible = true"
+            />
           </div>
         </div>
         <div v-else class="empty-state error">Controller linkage not configured.</div>
@@ -523,6 +569,8 @@ onUnmounted(() => {
       :start-at="state.currentCycle.value?.startAt ?? null"
       :total-duration-days="state.totalDurationDays.value"
     />
+
+    <AlertsPanel v-model:visible="alertsVisible" :cycle-id="cycleId" @changed="loadAlerts" />
   </div>
   <div v-else class="not-found">
     <Card>
@@ -580,7 +628,10 @@ onUnmounted(() => {
 
 .hero-strip {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr) auto minmax(220px, 1.5fr);
+  grid-template-columns: minmax(180px, 1fr) auto minmax(160px, 1fr) auto minmax(
+      220px,
+      1.5fr
+    ) auto auto;
   align-items: center;
   gap: var(--space-5);
 }
@@ -701,6 +752,15 @@ onUnmounted(() => {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.hero-alerts {
+  justify-content: flex-end;
+}
+
+.alerts-badge {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 .empty-state.error {
