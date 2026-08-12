@@ -6,6 +6,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 import { useApiStore } from '../../stores/apiStore'
 import { useProvidedGrowMonitorState } from './useGrowMonitorState'
 import { formatBytes } from '../../utils/snapshotFormat'
+import { healthScoreClass, type HealthScoreClass } from '../../utils/vision'
 import type { Camera, CameraSnapshot } from '../../types/grow'
 
 const PAGE_SIZE = 50
@@ -23,6 +24,10 @@ const oldest = computed(() => snaps.value.at(-1) ?? null)
 
 const hasMore = ref(true)
 const selected = ref<CameraSnapshot | null>(null)
+
+function healthClass(snapshotId: string): HealthScoreClass {
+  return healthScoreClass(store.visionBySnapshot[snapshotId]?.healthScore ?? null)
+}
 
 async function loadFirst() {
   if (!props.camera) return
@@ -130,6 +135,14 @@ onBeforeUnmount(() => {
             loading="lazy"
             :alt="`Snapshot ${snap.capturedAt}`"
           />
+          <span
+            v-if="store.visionBySnapshot[snap.id]"
+            class="snap-vision-badge"
+            :class="healthClass(snap.id)"
+            data-testid="snap-vision-badge"
+          >
+            <i class="pi pi-sparkles" /> {{ store.visionBySnapshot[snap.id]?.healthScore ?? '—' }}
+          </span>
           <span class="snap-meta">
             {{ formatBytes(snap.bytes) }} · {{ new Date(snap.capturedAt).toLocaleString() }}
           </span>
@@ -166,6 +179,33 @@ onBeforeUnmount(() => {
         />
         <div class="snap-preview-meta">
           {{ formatBytes(selected.bytes) }} · {{ new Date(selected.capturedAt).toLocaleString() }}
+        </div>
+        <div
+          v-if="store.visionBySnapshot[selected.id]"
+          class="snap-vision-detail"
+          data-testid="snap-vision-detail"
+        >
+          <div class="snap-vision-header">
+            <span
+              class="vision-health"
+              :class="healthClass(selected.id)"
+              :data-testid="`vision-health-${selected.id}`"
+            >
+              {{ store.visionBySnapshot[selected.id]?.healthScore ?? '—' }}/10
+            </span>
+            <span class="vision-summary">{{ store.visionBySnapshot[selected.id]?.summary }}</span>
+          </div>
+          <ul v-if="store.visionBySnapshot[selected.id]?.findings.length" class="vision-findings">
+            <li
+              v-for="(f, i) in store.visionBySnapshot[selected.id]?.findings ?? []"
+              :key="i"
+              :data-testid="`vision-finding-${i}`"
+            >
+              <span class="finding-category">{{ f.category }}</span>
+              <span class="finding-confidence">{{ f.confidence }}</span>
+              <span class="finding-desc">{{ f.description }}</span>
+            </li>
+          </ul>
         </div>
         <Button
           icon="pi pi-times"
@@ -230,6 +270,7 @@ onBeforeUnmount(() => {
   text-align: left;
   color: inherit;
   font: inherit;
+  position: relative;
 }
 
 .snap-thumb:hover {
@@ -242,6 +283,53 @@ onBeforeUnmount(() => {
   object-fit: cover;
   background: #000;
   display: block;
+}
+
+.snap-vision-badge {
+  position: absolute;
+  top: var(--space-1);
+  right: var(--space-1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+.snap-vision-badge i {
+  font-size: 0.625rem;
+}
+
+.snap-vision-badge.good {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+.snap-vision-badge.ok {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.snap-vision-badge.bad {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+.snap-vision-badge.neutral {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
 }
 
 .snap-meta {
@@ -313,5 +401,96 @@ onBeforeUnmount(() => {
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
+}
+
+.snap-vision-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-sm);
+}
+
+.snap-vision-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.snap-vision-header .vision-health {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.snap-vision-header .vision-health.good {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+.snap-vision-header .vision-health.ok {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.snap-vision-header .vision-health.bad {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
+
+.snap-vision-header .vision-health.neutral {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.snap-vision-header .vision-summary {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  line-height: var(--leading-normal);
+  flex: 1;
+  min-width: 0;
+}
+
+.vision-findings {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.vision-findings li {
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+  line-height: var(--leading-normal);
+}
+
+.finding-category {
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--color-accent);
+  margin-right: var(--space-1);
+}
+
+.finding-confidence {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  margin-right: var(--space-1);
+}
+
+.finding-desc {
+  color: var(--color-text-secondary);
 }
 </style>

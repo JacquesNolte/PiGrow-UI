@@ -1,12 +1,14 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
-import type { AdvisorResponse, GrowExportBundle } from '../types/grow'
+import type { AdvisorResponse, GrowExportBundle, VisionResponse } from '../types/grow'
 import { API_BASE } from './apiBase'
 
 export const useAiStore = defineStore('ai', () => {
   const loading = ref(false)
   const analyzing = ref(false)
+  const visionBySnapshot = ref<Record<string, VisionResponse>>({})
+  const analyzingSnapshots = ref<Record<string, boolean>>({})
 
   async function analyze(cycleId: string, windowDays?: number): Promise<AdvisorResponse> {
     analyzing.value = true
@@ -19,6 +21,18 @@ export const useAiStore = defineStore('ai', () => {
       return res.data as AdvisorResponse
     } finally {
       analyzing.value = false
+    }
+  }
+
+  async function analyzeSnapshot(snapshotId: string): Promise<VisionResponse> {
+    analyzingSnapshots.value = { ...analyzingSnapshots.value, [snapshotId]: true }
+    try {
+      const res = await axios.post(`${API_BASE}/camera-snapshots/${snapshotId}/analyze`)
+      const vision = res.data as VisionResponse
+      visionBySnapshot.value = { ...visionBySnapshot.value, [snapshotId]: vision }
+      return vision
+    } finally {
+      analyzingSnapshots.value = { ...analyzingSnapshots.value, [snapshotId]: false }
     }
   }
 
@@ -39,5 +53,13 @@ export const useAiStore = defineStore('ai', () => {
     }
   }
 
-  return { analyze, analyzing, fetchExport, loading }
+  return {
+    analyze,
+    analyzeSnapshot,
+    analyzing,
+    analyzingSnapshots,
+    fetchExport,
+    loading,
+    visionBySnapshot,
+  }
 })

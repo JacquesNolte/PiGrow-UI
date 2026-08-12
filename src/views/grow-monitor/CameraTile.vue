@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
 import { useApiStore } from '../../stores/apiStore'
 import { useProvidedGrowMonitorState } from './useGrowMonitorState'
 import { formatRelative } from '../../utils/snapshotFormat'
+import { extractApiError } from '../../utils/errors'
+import { healthScoreClass, type HealthScoreClass } from '../../utils/vision'
 import type { Camera } from '../../types/grow'
 
 const props = defineProps<{ camera: Camera }>()
@@ -11,6 +14,7 @@ defineEmits<{ edit: []; delete: []; gallery: [] }>()
 
 const store = useApiStore()
 const state = useProvidedGrowMonitorState()
+const toast = useToast()
 
 const streamReady = ref(false)
 const streamFailed = ref(false)
@@ -20,7 +24,36 @@ let failureTimer: ReturnType<typeof setTimeout> | null = null
 
 const latest = computed(() => store.latestSnapshot[props.camera.id] ?? null)
 
+function healthClass(snapshotId: string): HealthScoreClass {
+  return healthScoreClass(store.visionBySnapshot[snapshotId]?.healthScore ?? null)
+}
+
 void store.fetchLatestSnapshot(props.camera.id)
+
+async function analyzeLatest() {
+  const snap = latest.value
+  if (!snap) return
+  try {
+    await store.ai.analyzeSnapshot(snap.id)
+  } catch (err) {
+    const { status, message } = extractApiError(err, 'Analysis failed')
+    if (status === 503) {
+      toast.add({
+        detail: 'AI vision not configured — set AI_PROVIDER and AI_API_KEY on the server.',
+        life: 6000,
+        severity: 'info',
+        summary: 'Not configured',
+      })
+    } else {
+      toast.add({
+        detail: message,
+        life: 6000,
+        severity: 'error',
+        summary: 'Analysis failed',
+      })
+    }
+  }
+}
 
 function onIframeLoad() {
   streamReady.value = true
@@ -162,6 +195,20 @@ onBeforeUnmount(() => {
         data-testid="camera-iframe"
         @load="onIframeLoad"
       />
+      <div
+        v-if="latest && store.visionBySnapshot[latest.id]"
+        class="vision-overlay"
+        data-testid="camera-vision-overlay"
+      >
+        <span
+          class="vision-health"
+          :class="healthClass(latest.id)"
+          :data-testid="`vision-health-${latest.id}`"
+        >
+          {{ store.visionBySnapshot[latest.id]?.healthScore ?? '—' }}/10
+        </span>
+        <span class="vision-summary">{{ store.visionBySnapshot[latest.id]?.summary }}</span>
+      </div>
     </div>
     <div class="tile-footer">
       <span
@@ -194,6 +241,18 @@ onBeforeUnmount(() => {
         aria-label="Open snapshot gallery"
         data-testid="camera-gallery"
         @click="$emit('gallery')"
+      />
+      <Button
+        v-if="latest"
+        label="Analyze"
+        icon="pi pi-sparkles"
+        text
+        size="small"
+        :loading="!!store.analyzingSnapshots[latest.id]"
+        :disabled="!!store.analyzingSnapshots[latest.id]"
+        aria-label="Analyze snapshot"
+        data-testid="camera-analyze"
+        @click="analyzeLatest"
       />
     </div>
   </div>
@@ -344,5 +403,64 @@ onBeforeUnmount(() => {
   font-size: var(--text-xs);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+.vision-overlay {
+  position: absolute;
+  bottom: var(--space-2);
+  left: var(--space-2);
+  right: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  pointer-events: none;
+  max-width: calc(100% - var(--space-4));
+}
+
+.vision-health {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.vision-health.good {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
+}
+
+.vision-health.ok {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+}
+
+.vision-health.bad {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
+
+.vision-health.neutral {
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.vision-summary {
+  line-height: var(--leading-normal);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 </style>

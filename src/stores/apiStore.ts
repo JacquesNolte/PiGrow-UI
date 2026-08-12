@@ -58,6 +58,7 @@ export const useApiStore = defineStore('api', () => {
   const { growCycles } = storeToRefs(growCycleStore)
   const { nutrients } = storeToRefs(nutrientStore)
   const { cameras, latestSnapshot, loadingSnapshots, snapshots } = storeToRefs(cameraStore)
+  const { analyzingSnapshots, visionBySnapshot } = storeToRefs(aiStore)
 
   async function fetchAll() {
     loading.value = true
@@ -77,12 +78,14 @@ export const useApiStore = defineStore('api', () => {
     activateGrowPhase: growPhaseStore.activateGrowPhase,
     ai: {
       analyze: aiStore.analyze,
+      analyzeSnapshot: aiStore.analyzeSnapshot,
       fetchExport: aiStore.fetchExport,
     },
     alerts: {
       list: alertStore.list,
       setResolved: alertStore.setResolved,
     },
+    analyzingSnapshots,
     claimController: controllerStore.claimController,
     cameras,
     controllers,
@@ -173,5 +176,6 @@ export const useApiStore = defineStore('api', () => {
     updateRule: automationRuleStore.updateRule,
     updateSensor: sensorStore.updateSensor,
     upsertPhaseEnvironment: growPhaseStore.upsertPhaseEnvironment,
+    visionBySnapshot,
   }
 })

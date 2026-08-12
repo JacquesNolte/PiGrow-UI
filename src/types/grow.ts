@@ -535,6 +535,18 @@ export interface AdvisorResponse {
   prioritizedActions: string[]
 }
 
+export interface VisionFinding {
+  category: 'deficiency' | 'excess' | 'pest' | 'mold' | 'canopy' | 'other'
+  description: string
+  confidence: 'low' | 'medium' | 'high'
+}
+
+export interface VisionResponse {
+  summary: string
+  healthScore: number | null
+  findings: VisionFinding[]
+}
+
 export interface GrowExportBundle {
   cycle: {
     id: string

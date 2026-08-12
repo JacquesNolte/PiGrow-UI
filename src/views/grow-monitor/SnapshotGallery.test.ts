@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref, type Ref } from 'vue'
-import type { Camera, CameraSnapshot } from '../../types/grow'
+import type { Camera, CameraSnapshot, VisionResponse } from '../../types/grow'
 
 vi.mock('primevue/usetoast', () => ({
   useToast: () => ({ add: vi.fn() }),
@@ -16,6 +16,7 @@ vi.mock('./useGrowMonitorState', () => ({
 let snapshotsRef = ref<Record<string, CameraSnapshot[]>>({})
 let latestSnapshotRef = ref<Record<string, CameraSnapshot | null>>({})
 let loadingSnapshotsRef = ref(false)
+let visionBySnapshotRef = ref<Record<string, VisionResponse>>({})
 
 const fetchSnapshotsMock = vi.fn()
 const fetchLatestSnapshotMock = vi.fn()
@@ -31,6 +32,9 @@ vi.mock('../../stores/apiStore', () => ({
     },
     get loadingSnapshots() {
       return loadingSnapshotsRef.value
+    },
+    get visionBySnapshot() {
+      return visionBySnapshotRef.value
     },
     fetchSnapshots: fetchSnapshotsMock,
     fetchLatestSnapshot: fetchLatestSnapshotMock,
@@ -84,6 +88,7 @@ describe('SnapshotGallery', () => {
     snapshotsRef = ref<Record<string, CameraSnapshot[]>>({})
     latestSnapshotRef = ref<Record<string, CameraSnapshot | null>>({})
     loadingSnapshotsRef = ref(false)
+    visionBySnapshotRef = ref<Record<string, VisionResponse>>({})
     fetchSnapshotsMock.mockReset()
     fetchLatestSnapshotMock.mockReset()
     prependSnapshotMock.mockReset()
@@ -277,5 +282,89 @@ describe('SnapshotGallery', () => {
 
     expect(w.find('[data-testid="gallery-empty-none"]').exists()).toBe(true)
     expect(w.text()).toMatch(/no snapshots yet/i)
+  })
+
+  it('renders a vision badge on thumbnails whose snapshot has a cached analysis', async () => {
+    const snap = makeSnap({ id: 's1' })
+    fetchSnapshotsMock.mockImplementation(async () => {
+      snapshotsRef.value = { cam1: [snap] }
+      return [snap]
+    })
+    visionBySnapshotRef.value = {
+      s1: { summary: 'looks good', healthScore: 9, findings: [] },
+    }
+
+    const camera = makeCamera({ snapshotIntervalMinutes: 5 })
+    const w = mount(SnapshotGallery, {
+      global: { stubs: primeVueStubs },
+      props: { camera, visible: false },
+    })
+
+    await w.setProps({ visible: true })
+    await flush()
+
+    expect(w.find('[data-testid="snap-vision-badge"]').exists()).toBe(true)
+  })
+
+  it('does not render a vision badge when the snapshot has no cached analysis', async () => {
+    const snap = makeSnap({ id: 's1' })
+    fetchSnapshotsMock.mockImplementation(async () => {
+      snapshotsRef.value = { cam1: [snap] }
+      return [snap]
+    })
+    visionBySnapshotRef.value = {}
+
+    const camera = makeCamera({ snapshotIntervalMinutes: 5 })
+    const w = mount(SnapshotGallery, {
+      global: { stubs: primeVueStubs },
+      props: { camera, visible: false },
+    })
+
+    await w.setProps({ visible: true })
+    await flush()
+
+    expect(w.find('[data-testid="snap-vision-badge"]').exists()).toBe(false)
+  })
+
+  it('renders the vision detail view with summary and findings when a cached snapshot is selected', async () => {
+    const snap = makeSnap({ id: 's1' })
+    fetchSnapshotsMock.mockImplementation(async () => {
+      snapshotsRef.value = { cam1: [snap] }
+      return [snap]
+    })
+    visionBySnapshotRef.value = {
+      s1: {
+        summary: 'yellowing leaves noted',
+        healthScore: 5,
+        findings: [
+          {
+            category: 'deficiency',
+            description: 'yellowing leaves',
+            confidence: 'high',
+          },
+        ],
+      },
+    }
+
+    const camera = makeCamera({ snapshotIntervalMinutes: 5 })
+    const w = mount(SnapshotGallery, {
+      global: { stubs: primeVueStubs },
+      props: { camera, visible: false },
+    })
+
+    await w.setProps({ visible: true })
+    await flush()
+
+    await w.get('[data-testid="gallery-thumb"]').trigger('click')
+    await flush()
+
+    const detail = w.find('[data-testid="snap-vision-detail"]')
+    expect(detail.exists()).toBe(true)
+    expect(detail.text()).toContain('yellowing leaves noted')
+
+    const finding = w.find('[data-testid="vision-finding-0"]')
+    expect(finding.exists()).toBe(true)
+    expect(finding.text()).toContain('deficiency')
+    expect(finding.text()).toContain('yellowing leaves')
   })
 })
