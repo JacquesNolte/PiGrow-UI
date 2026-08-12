@@ -11,6 +11,7 @@ import { useAutomationRuleStore } from './automationRuleStore'
 import { useDosingLogStore } from './dosingLogStore'
 import { useCameraStore } from './cameraStore'
 import { useGrowCycleNoteStore } from './growCycleNoteStore'
+import { useHarvestLogStore } from './harvestLogStore'
 import axios from 'axios'
 import { API_BASE } from './apiBase'
 import type { DosingWarningCode } from '../types/grow'
@@ -40,6 +41,7 @@ export const useApiStore = defineStore('api', () => {
   const dosingLogStore = useDosingLogStore()
   const cameraStore = useCameraStore()
   const growCycleNoteStore = useGrowCycleNoteStore()
+  const harvestLogStore = useHarvestLogStore()
 
   async function previewDosing(growPhaseId: string, payload: DosingPreviewPayload) {
     const res = await axios.post(`${API_BASE}/grow-phases/${growPhaseId}/dosing/preview`, payload)
@@ -101,6 +103,11 @@ export const useApiStore = defineStore('api', () => {
       create: growCycleNoteStore.create,
       update: growCycleNoteStore.update,
       remove: growCycleNoteStore.remove,
+    },
+    harvestLogs: {
+      get: harvestLogStore.get,
+      upsert: harvestLogStore.upsert,
+      remove: harvestLogStore.remove,
     },
     deleteSensor: sensorStore.deleteSensor,
     endGrow: growCycleStore.endGrow,

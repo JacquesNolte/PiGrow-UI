@@ -468,6 +468,27 @@ export interface UpdateGrowCycleNotePayload {
   note?: string
 }
 
+export interface HarvestLog {
+  id: string
+  growCycleId: string
+  completedAt: string
+  yieldGrams: number | null
+  qualityRating: number | null
+  pestOrDiseaseNotes: string | null
+  whatWorked: string | null
+  whatToImprove: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface UpsertHarvestLogPayload {
+  yieldGrams?: number | null
+  qualityRating?: number | null
+  pestOrDiseaseNotes?: string | null
+  whatWorked?: string | null
+  whatToImprove?: string | null
+}
+
 // TODO: when a device history view is built, render `reason` tolerating new
 // AUTO reason strings: "day cycle start (phase <id>)", "night cycle start
 // (phase <id>)", "ALWAYS_ON rule (<id>)", "ALWAYS_OFF rule (<id>)" (alongside
