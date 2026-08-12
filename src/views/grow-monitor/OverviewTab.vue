@@ -1,16 +1,44 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { useProvidedGrowMonitorState } from './useGrowMonitorState'
+import { useApiStore } from '../../stores/apiStore'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
+import Rating from 'primevue/rating'
 import Tag from 'primevue/tag'
 import ToggleSwitch from 'primevue/toggleswitch'
+import HarvestLogDialog from '../../components/HarvestLogDialog.vue'
+import type { HarvestLog } from '../../types/grow'
 
 const state = useProvidedGrowMonitorState()
 const router = useRouter()
 const toast = useToast()
+const apiStore = useApiStore()
+
+const harvestLog = ref<HarvestLog | null>(null)
+const harvestVisible = ref(false)
+
+async function fetchHarvestLog() {
+  const id = state.cycleId.value
+  if (!id) {
+    harvestLog.value = null
+    return
+  }
+  try {
+    harvestLog.value = await apiStore.harvestLogs.get(id)
+  } catch {}
+}
+
+onMounted(() => {
+  void fetchHarvestLog()
+})
+
+function onHarvestSaved(log: HarvestLog) {
+  harvestLog.value = log
+  harvestVisible.value = false
+}
 
 async function onDeviceToggle(deviceId: string, val: boolean, pin: number) {
   const result = await state.onDeviceToggle(deviceId, val, pin)
@@ -48,6 +76,77 @@ const setupRows = computed(() => {
 
 <template>
   <div class="overview-tab">
+    <HarvestLogDialog
+      v-model:visible="harvestVisible"
+      :cycle-id="state.cycleId.value"
+      @saved="onHarvestSaved"
+    />
+
+    <Card v-if="harvestLog">
+      <template #title>
+        <div class="section-title-row">
+          <span>Harvest</span>
+          <Button
+            label="Edit"
+            icon="pi pi-pencil"
+            text
+            size="small"
+            severity="secondary"
+            data-testid="overview-edit-harvest"
+            @click="harvestVisible = true"
+          />
+        </div>
+      </template>
+      <template #content>
+        <div class="harvest-grid">
+          <div class="harvest-metric">
+            <span class="harvest-label">Yield</span>
+            <span class="harvest-value">
+              {{ harvestLog.yieldGrams != null ? `${harvestLog.yieldGrams} g` : '—' }}
+            </span>
+          </div>
+          <div class="harvest-metric">
+            <span class="harvest-label">Quality</span>
+            <Rating
+              :modelValue="harvestLog.qualityRating ?? 0"
+              readonly
+              data-testid="overview-harvest-rating"
+            />
+          </div>
+          <div v-if="harvestLog.pestOrDiseaseNotes" class="harvest-note">
+            <span class="harvest-label">Pest / disease</span>
+            <span class="harvest-text">{{ harvestLog.pestOrDiseaseNotes }}</span>
+          </div>
+          <div v-if="harvestLog.whatWorked" class="harvest-note">
+            <span class="harvest-label">What worked</span>
+            <span class="harvest-text">{{ harvestLog.whatWorked }}</span>
+          </div>
+          <div v-if="harvestLog.whatToImprove" class="harvest-note">
+            <span class="harvest-label">What to improve</span>
+            <span class="harvest-text">{{ harvestLog.whatToImprove }}</span>
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <Card v-else-if="state.isGrowComplete.value" class="harvest-prompt-card">
+      <template #content>
+        <div class="harvest-prompt">
+          <div class="harvest-prompt-text">
+            <i class="pi pi-trophy" />
+            <span>Grow complete — record the harvest.</span>
+          </div>
+          <Button
+            label="Log harvest"
+            icon="pi pi-trophy"
+            severity="success"
+            data-testid="overview-log-harvest"
+            @click="harvestVisible = true"
+          />
+        </div>
+      </template>
+    </Card>
+
     <Card>
       <template #title>Grow Setup</template>
       <template #content>
@@ -556,5 +655,76 @@ const setupRows = computed(() => {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* Harvest */
+
+.harvest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+.harvest-metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.harvest-note {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.harvest-label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+}
+
+.harvest-value {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.harvest-text {
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+}
+
+.harvest-prompt-card {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+}
+
+.harvest-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.harvest-prompt-text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.harvest-prompt-text .pi {
+  color: var(--color-success);
+  font-size: 1.25rem;
 }
 </style>

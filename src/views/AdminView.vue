@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApiStore } from '../stores/apiStore'
 import { useToast } from 'primevue/usetoast'
@@ -11,12 +11,26 @@ import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import ConfirmDialog from 'primevue/confirmdialog'
 import { useConfirm } from 'primevue/useconfirm'
+import { canLogHarvest } from '../utils/harvest'
+import HarvestLogDialog from '../components/HarvestLogDialog.vue'
 import type { GrowCycleListItem } from '../types/grow'
 
 const store = useApiStore()
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
+
+const harvestVisible = ref(false)
+const harvestCycleId = ref('')
+
+function openHarvestLog(id: string) {
+  harvestCycleId.value = id
+  harvestVisible.value = true
+}
+
+function onHarvestSaved() {
+  harvestVisible.value = false
+}
 
 onMounted(() => {
   store.fetchAll()
@@ -89,6 +103,11 @@ async function deleteGrowCycle(id: string, name: string) {
 
 <template>
   <ConfirmDialog />
+  <HarvestLogDialog
+    v-model:visible="harvestVisible"
+    :cycle-id="harvestCycleId"
+    @saved="onHarvestSaved"
+  />
   <div class="admin-page">
     <Card>
       <template #title>
@@ -201,9 +220,20 @@ async function deleteGrowCycle(id: string, name: string) {
               <span v-else class="grow-setup-summary">{{ growSetupSummary(slotProps.data) }}</span>
             </template>
           </Column>
-          <Column header="Actions" style="width: 140px">
+          <Column header="Actions" style="width: 180px">
             <template #body="slotProps">
               <div class="row-actions">
+                <Button
+                  v-if="canLogHarvest(slotProps.data)"
+                  icon="pi pi-trophy"
+                  severity="success"
+                  text
+                  rounded
+                  size="small"
+                  aria-label="Log harvest"
+                  data-testid="log-harvest"
+                  @click="openHarvestLog(slotProps.data.id)"
+                />
                 <Button
                   icon="pi pi-pencil"
                   severity="secondary"

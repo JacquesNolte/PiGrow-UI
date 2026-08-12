@@ -2,8 +2,14 @@ import { defineComponent, h, type ConcreteComponent } from 'vue'
 
 const DialogStub = defineComponent({
   name: 'DialogStub',
-  setup(_props, { slots }) {
-    return () => h('div', { class: 'dialog-stub' }, [slots.default?.(), slots.footer?.()])
+  props: ['header'],
+  setup(props, { slots }) {
+    return () => {
+      const headerNode = props.header
+        ? h('div', { class: 'dialog-stub-header' }, props.header)
+        : null
+      return h('div', { class: 'dialog-stub' }, [headerNode, slots.default?.(), slots.footer?.()])
+    }
   },
 })
 
@@ -55,6 +61,30 @@ const MultiSelectStub = defineComponent({
   emits: ['update:modelValue'],
   setup(_props, { slots }) {
     return () => h('div', { class: 'multi-select-stub' }, slots.default?.() ?? [])
+  },
+})
+
+const RatingStub = defineComponent({
+  name: 'RatingStub',
+  props: ['modelValue'],
+  emits: ['update:modelValue'],
+  setup(props, { emit }) {
+    return () =>
+      h(
+        'div',
+        { 'data-testid': 'rating-stub', class: 'rating-stub' },
+        [1, 2, 3, 4, 5].map((n) =>
+          h(
+            'button',
+            {
+              'data-testid': `rating-star-${n}`,
+              type: 'button',
+              onClick: () => emit('update:modelValue', n),
+            },
+            String(n),
+          ),
+        ),
+      )
   },
 })
 
@@ -172,6 +202,7 @@ export const primeVueStubs: Record<string, true | ConcreteComponent> = {
   Message: MessageStub as unknown as ConcreteComponent,
   MultiSelect: MultiSelectStub as unknown as ConcreteComponent,
   ProgressSpinner: true,
+  Rating: RatingStub as unknown as ConcreteComponent,
   Select: true,
   Tab: true,
   TabList: true,
@@ -194,6 +225,7 @@ export const primeVueStubs: Record<string, true | ConcreteComponent> = {
   'primevue/message': MessageStub as unknown as ConcreteComponent,
   'primevue/multiselect': MultiSelectStub as unknown as ConcreteComponent,
   'primevue/progressspinner': true,
+  'primevue/rating': RatingStub as unknown as ConcreteComponent,
   'primevue/select': true,
   'primevue/tab': true,
   'primevue/tablist': true,
