@@ -10,8 +10,9 @@ vi.mock('./useGrowMonitorState', () => ({
 }))
 
 const analyzeMock = vi.fn()
+const getAnalysisMock = vi.fn()
 vi.mock('../../stores/apiStore', () => ({
-  useApiStore: () => ({ ai: { analyze: analyzeMock } }),
+  useApiStore: () => ({ ai: { analyze: analyzeMock, getAnalysis: getAnalysisMock } }),
 }))
 
 import AiAdvisorTab from './AiAdvisorTab.vue'
@@ -54,6 +55,8 @@ describe('AiAdvisorTab', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     analyzeMock.mockReset()
+    getAnalysisMock.mockReset()
+    getAnalysisMock.mockResolvedValue({ analysis: null, analysisAt: null, analysisSummary: null })
     cycleIdRef.value = 'c1'
   })
 
@@ -191,5 +194,105 @@ describe('AiAdvisorTab', () => {
 
     expect(analyzeMock).toHaveBeenCalledTimes(2)
     expect(w.find('[data-testid="ai-health"]').exists()).toBe(true)
+  })
+
+  it('renders the cached analysis on mount without clicking "Analyze now"', async () => {
+    getAnalysisMock.mockResolvedValueOnce({
+      analysis: {
+        environmentalSuggestions: [],
+        feedingSuggestions: [],
+        healthSummary: 'Cached insight',
+        issues: [
+          {
+            category: 'environment',
+            confidence: 'high',
+            description: 'Humidity off',
+            rationale: 'trend',
+            severity: 'warning',
+            suggestedAdjustment: 'Open vents',
+          },
+        ],
+        prioritizedActions: ['Open vents'],
+      },
+      analysisAt: '2026-08-14T12:34:56.000Z',
+      analysisSummary: 'Cached insight',
+    })
+
+    const w = mount(AiAdvisorTab, { global: { stubs } })
+
+    await flush()
+
+    expect(getAnalysisMock).toHaveBeenCalledWith('c1')
+
+    const health = w.find('[data-testid="ai-health"]')
+    expect(health.exists()).toBe(true)
+    expect(health.text()).toContain('Cached insight')
+
+    const lastAnalyzed = w.find('[data-testid="ai-last-analyzed"]')
+    expect(lastAnalyzed.exists()).toBe(true)
+    expect(lastAnalyzed.text()).toMatch(/2026/)
+    expect(w.find('[data-testid="ai-empty"]').exists()).toBe(false)
+  })
+
+  it('shows the empty state when no cached analysis exists', async () => {
+    const w = mount(AiAdvisorTab, { global: { stubs } })
+
+    await flush()
+
+    expect(getAnalysisMock).toHaveBeenCalledWith('c1')
+    expect(w.find('[data-testid="ai-empty"]').exists()).toBe(true)
+    expect(w.find('[data-testid="ai-health"]').exists()).toBe(false)
+    expect(w.find('[data-testid="ai-last-analyzed"]').exists()).toBe(false)
+  })
+
+  it('"Analyze now" still POSTs and replaces the cached result', async () => {
+    getAnalysisMock.mockResolvedValueOnce({
+      analysis: {
+        environmentalSuggestions: [],
+        feedingSuggestions: [],
+        healthSummary: 'Stale cached insight',
+        issues: [],
+        prioritizedActions: [],
+      },
+      analysisAt: '2026-08-14T10:00:00.000Z',
+      analysisSummary: 'Stale cached insight',
+    })
+    analyzeMock.mockResolvedValue({
+      environmentalSuggestions: [],
+      feedingSuggestions: [],
+      healthSummary: 'Fresh insight',
+      issues: [],
+      prioritizedActions: [],
+    })
+
+    const w = mount(AiAdvisorTab, { global: { stubs } })
+
+    await flush()
+
+    expect(w.find('[data-testid="ai-health"]').text()).toContain('Stale cached insight')
+
+    await w.get('[data-testid="ai-analyze-btn"]').trigger('click')
+    await flush()
+
+    expect(analyzeMock).toHaveBeenCalledWith('c1')
+    const health = w.find('[data-testid="ai-health"]')
+    expect(health.exists()).toBe(true)
+    expect(health.text()).toContain('Fresh insight')
+    expect(health.text()).not.toContain('Stale cached insight')
+  })
+
+  it('falls back to empty state if the cached read errors', async () => {
+    getAnalysisMock.mockRejectedValueOnce(new Error('boom'))
+
+    const w = mount(AiAdvisorTab, { global: { stubs } })
+
+    await flush()
+
+    expect(getAnalysisMock).toHaveBeenCalledWith('c1')
+    expect(w.find('[data-testid="ai-empty"]').exists()).toBe(true)
+
+    const btn = w.find('[data-testid="ai-analyze-btn"]')
+    expect(btn.exists()).toBe(true)
+    expect(btn.attributes('disabled')).toBe('false')
   })
 })

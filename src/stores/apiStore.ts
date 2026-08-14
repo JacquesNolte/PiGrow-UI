@@ -80,6 +80,7 @@ export const useApiStore = defineStore('api', () => {
       analyze: aiStore.analyze,
       analyzeSnapshot: aiStore.analyzeSnapshot,
       fetchExport: aiStore.fetchExport,
+      getAnalysis: aiStore.getAnalysis,
     },
     alerts: {
       list: alertStore.list,

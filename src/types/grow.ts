@@ -535,6 +535,12 @@ export interface AdvisorResponse {
   prioritizedActions: string[]
 }
 
+export interface CachedAdvisorAnalysis {
+  analysis: AdvisorResponse | null
+  analysisAt: string | null
+  analysisSummary: string | null
+}
+
 export interface VisionFinding {
   category: 'deficiency' | 'excess' | 'pest' | 'mold' | 'canopy' | 'other'
   description: string

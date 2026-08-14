@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
-import type { AdvisorResponse, GrowExportBundle, VisionResponse } from '../types/grow'
+import type {
+  AdvisorResponse,
+  CachedAdvisorAnalysis,
+  GrowExportBundle,
+  VisionResponse,
+} from '../types/grow'
 import { API_BASE } from './apiBase'
 
 export const useAiStore = defineStore('ai', () => {
@@ -22,6 +27,11 @@ export const useAiStore = defineStore('ai', () => {
     } finally {
       analyzing.value = false
     }
+  }
+
+  async function getAnalysis(cycleId: string): Promise<CachedAdvisorAnalysis> {
+    const res = await axios.get(`${API_BASE}/grow-cycles/${cycleId}/ai-analysis`)
+    return res.data as CachedAdvisorAnalysis
   }
 
   async function analyzeSnapshot(snapshotId: string): Promise<VisionResponse> {
@@ -59,6 +69,7 @@ export const useAiStore = defineStore('ai', () => {
     analyzing,
     analyzingSnapshots,
     fetchExport,
+    getAnalysis,
     loading,
     visionBySnapshot,
   }

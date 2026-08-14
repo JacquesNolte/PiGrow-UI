@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
@@ -18,6 +18,20 @@ const error = ref<string | null>(null)
 const notConfigured = ref(false)
 const analyzing = ref(false)
 const lastAnalyzedAt = ref<string | null>(null)
+
+function formatTimestamp(iso: string | null): string | null {
+  return iso ? new Date(iso).toLocaleString() : null
+}
+
+async function loadCached() {
+  try {
+    const cached = await store.ai.getAnalysis(state.cycleId.value)
+    if (cached.analysis) {
+      result.value = cached.analysis
+      lastAnalyzedAt.value = formatTimestamp(cached.analysisAt)
+    }
+  } catch {}
+}
 
 async function analyzeNow() {
   analyzing.value = true
@@ -46,6 +60,9 @@ function issueSeverityTag(sev: AdvisorIssue['severity']): 'danger' | 'warn' | 'i
   if (sev === 'warning') return 'warn'
   return 'info'
 }
+
+onMounted(loadCached)
+watch(() => state.cycleId.value, loadCached)
 </script>
 
 <template>
