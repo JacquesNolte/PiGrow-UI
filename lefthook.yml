@@ -2,6 +2,7 @@ pre-commit:
   parallel: true
   commands:
     lint:
+      glob: '*.{js,jsx,ts,tsx,vue,mjs,cjs}'
       run: npx oxlint --fix {staged_files}
       stage_fixed: true
     format:
